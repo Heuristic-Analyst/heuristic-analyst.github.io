@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Multiple linear regression with gradient descent from scratch in Python</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <meta name="description" content="Calculate the optimal values of a multiple linear regression using the gradient descent algorithm" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li><a href="/category/fundamentals.html">Fundamentals</a></li>
+                    <li class="active"><a href="/category/machine-learning.html">Machine Learning</a></li>
+                    <li><a href="/category/quant.html">Quant</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/multiple-linear-regression-with-gradient-descent-from-scratch-in-python.html" rel="bookmark"
+           title="Permalink to Multiple linear regression with gradient descent from scratch in Python">Multiple linear regression with gradient descent from scratch in Python</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2022-06-25T12:00:00+02:00">
+                Published: Sat 25 June 2022
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/machine-learning.html">Machine Learning</a>.</p>
+<p>tags: <a href="/tag/code.html">Code</a> <a href="/tag/machine-learning.html">Machine Learning</a> <a href="/tag/quant.html">Quant</a> </p>
+</footer><!-- /.post-info -->      <p>In this post I will show you how to calculate the optimal values of a multiple linear regression using the gradient descent algorithm. In the previous posts I already introduced you to the <a href="/simple-linear-regression.html">simple linear regression</a> (of one independent variable) and also to the <a href="/gradient-descent-and-stochastic-gradient-descent.html">(stochastic) gradient descent algorithm</a>.</p>
+<p>First, I will briefly introduce what multiple linear regression is and then I will present my implementation of the gradient descent algorithm created by scratch applied to multiple linear regression.</p>
+<p>The multiple linear regression is like the simple linear regression. You try to represent a linear relationship. The difference is that in multiple linear regression there are 2 or more independent variables.</p>
+<p>Simple linear regression:<br>
+</p>
+<div class="math">$$\hat{y} = \beta_0 + \beta_1 \cdot x$$</div>
+<p>Multiple linear regression:<br>
+</p>
+<div class="math">$$\hat{y} = \beta_0 + \beta_1 \cdot x_0 + \beta_2 \cdot x_1 + \beta_3 \cdot x_2 + \cdots$$</div>
+<p>So there are more than one than faktors explaining the <span class="math">\(\hat{y}\)</span> – Example: The 2 factors gender and age are important in predicting a person’s socioeconomic status</p>
+<p><strong><em>Now let’s move on to the implementation of gradient descent to optimize the factors of a multiple linear regression in Python: </em></strong><em>(Github link at the end)</em></p>
+<p><strong>Step 1</strong>: First we need to create a loss function. As a loss function I take the sum of the squared residuals:
+</p>
+<div class="math">$$\sum(\text{squared residuals}) = (y_1 - \hat{y})^2 + \cdots + (y_i - \hat{y_i})^2$$</div>
+<p>
+So we calculate <span class="math">\(\hat{y} (=b_0 + b_1 \cdot x_0 + b_2 \cdot x_1 + \cdots)\)</span> of every sample sample, subtract it from the actual <span class="math">\(y\)</span> and square it. We do this for all samples and add them to get th sum of squared differences.</p>
+<p>Using the library “SymPy” we can create functions and work with Python, so I will use that here. First I create the following equation with SymPy:<br>
+<span class="math">\((y-\hat{y})^2 = (y - (b_0 + b_1 \cdot x_0 + b_2 \cdot x_1 + \cdots))^2\)</span>. I will sibstitute the following variable names:<br>
+<span class="math">\(y\)</span> → <span class="math">\(\text{y_actual}\)</span><br>
+<span class="math">\(b_i\)</span> → <span class="math">\(\text{betas[i]}\)</span><br>
+<span class="math">\(x_i\)</span> → <span class="math">\(\text{x_values[i]}\)</span></p>
+<p><strong>Quickly how SymPy work</strong>: In SymPy, the variables have to be created first → I store them separately in lists. Then I create the desired function, loss function, with the help of these variables.</p>
+<p>This I will store in <em>“L_fct”</em> as string. I also have an empty list “gradient”, in which I will add all derivatives after the betas to be optimized. With “smp.diff” I can derive the previously created function with SymPy, which I do once for each beta. Then I store the derivatives in the “gradient” list.</p>
+<p><strong><em>Sidenote</em></strong>: If you have stored a function as a string in a variable, for example <span class="math">\(\text{f=”2x”}\)</span>, and you have defined the variables of this function before, then you can use the <em>“eval”</em> function to calculate the function (so <em>print(eval(f)) with x=4 declared before → output&gt;&gt; 8</em>).</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">sympy</span> <span class="k">as</span> <span class="nn">smp</span>
+
+<span class="k">def</span> <span class="nf">generate_loss_function_and_gradient</span><span class="p">(</span><span class="n">number_of_betas</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="c1"># create variables:</span>
+    <span class="c1">#   y -&gt; y_actual</span>
+    <span class="c1">#   b_0 -&gt; betas[0], b_1 -&gt; betas[1], ...</span>
+    <span class="c1">#   x_0 -&gt; x_values[0], x_1 -&gt; x_values[1], ...</span>
+    <span class="n">y_actual</span> <span class="o">=</span> <span class="n">smp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s2">&quot;y_actual&quot;</span><span class="p">,</span> <span class="n">real</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">beta_symbols</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">x_symbols</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_betas</span><span class="p">):</span>
+        <span class="n">beta_symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">smp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;betas[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="n">real</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_betas</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">x_symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">smp</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;x_values[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span> <span class="n">real</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+    <span class="c1"># Add variables to the function which will look like this:</span>
+    <span class="c1"># (y-ŷ)^2 = (y-(b_0 + b_1*x_0 + b_2*x_1 + ...))^2 -&gt; (y_actual - (betas[0] + betas[1]*x_values[0] + ...))^2</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">beta_symbols</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">number_of_betas</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">f</span><span class="o">+</span><span class="n">beta_symbols</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">x_symbols</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_actual</span><span class="o">-</span><span class="n">f</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+    <span class="c1"># Save function as a string</span>
+    <span class="n">L_fct</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="c1"># calculate gradient - derive with respect to every beta</span>
+    <span class="n">gradientList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">beta_symbols</span><span class="p">)):</span>
+        <span class="n">gradientList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">smp</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">beta_symbols</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">L_fct</span><span class="p">,</span> <span class="n">gradientList</span>
+</code></pre></div>
+
+<p><strong>Step 2</strong>: Now we have to pass the gradient, all sample data (<span class="math">\(\text{x-values}\)</span> and associated <span class="math">\(\text{y-value}\)</span> = 1 sample), the betas with which we started (and then optimized with each iteration) and the learning rate to the optimization function. Then calculate the descent values for each descent and update all betas in the last step.</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">gradient_descent_algorithm</span><span class="p">(</span><span class="n">learning_rate</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span> <span class="n">y_actual_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">x_values_population</span><span class="p">:</span><span class="nb">list</span><span class="p">,</span> <span class="n">betas</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">gradient</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+    <span class="c1"># Create list to save temporarily new betas</span>
+    <span class="n">new_betas</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">betas</span><span class="p">))]</span>
+    <span class="c1"># Iterate through each derivative of the gradient</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gradient</span><span class="p">)):</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Calculate derivative (&quot;slope&quot;) of every sample for the derivative i in gradient and sum them up in &quot;tmp&quot;</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_values_population</span><span class="p">)):</span>
+            <span class="n">y_actual</span> <span class="o">=</span> <span class="n">y_actual_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">x_values</span> <span class="o">=</span> <span class="n">x_values_population</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">tmp</span> <span class="o">+=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">gradient</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="c1"># Calculate Step size</span>
+        <span class="n">step_size</span><span class="o">=</span><span class="n">tmp</span><span class="o">*</span><span class="n">learning_rate</span>
+        <span class="c1"># Calculate new beta</span>
+        <span class="n">new_betas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">betas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">step_size</span>
+    <span class="c1"># When every beta is calculated: Update them</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">betas</span><span class="p">)):</span>
+        <span class="n">betas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_betas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</code></pre></div>
+
+<p><strong>Step 3</strong>: I wrote some code to calculate the sum of squared differences to stop either when the difference of the loss from the previous step to this step is smaller than a threshold, or until the number of iterations has reached its maximum:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">loss_function</span><span class="p">(</span><span class="n">y_actual</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">x_values</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">betas</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">L_fct</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="n">loss_of_sample</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">L_fct</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">loss_of_sample</span>
+
+
+<span class="k">def</span> <span class="nf">sum_loss_function</span><span class="p">(</span><span class="n">y_actual</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">x_values_population</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">betas</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">L_fct</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="n">sum_losses</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">y_actual</span><span class="p">)):</span>
+        <span class="n">sum_losses</span> <span class="o">+=</span> <span class="n">loss_function</span><span class="p">(</span><span class="n">y_actual</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">x_values_population</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">betas</span><span class="p">,</span> <span class="n">L_fct</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sum_losses</span>
+</code></pre></div>
+
+<p><strong>Last step: Test everything</strong> – To test everything I created 3 sample data with 3 independent variables each (that are then 4 betas – 3 factors + 1 intercept):</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">betas_vals</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># 4 factors - random initial values (I set them to all be ones)</span>
+    <span class="n">x_vals</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span>  <span class="c1"># sample 1 - 3 features</span>
+            <span class="p">[</span><span class="mf">2.3</span><span class="p">,</span> <span class="mf">8.9</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>  <span class="c1"># sample 2 - 3 features</span>
+            <span class="p">[</span><span class="mf">2.9</span><span class="p">,</span> <span class="mf">12.2</span><span class="p">,</span> <span class="mi">6</span><span class="p">]]</span>  <span class="c1"># sample 3 - 3 features</span>
+    <span class="n">y_vals</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">37.04</span><span class="p">,</span> <span class="o">-</span><span class="mf">207.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">312.9</span><span class="p">]</span>  <span class="c1"># 3 outcomes</span>
+
+    <span class="c1"># Generate loss function and gradient</span>
+    <span class="n">L_function</span><span class="p">,</span> <span class="n">gradient_functions</span> <span class="o">=</span> <span class="n">generate_loss_function_and_gradient</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">betas_vals</span><span class="p">))</span>
+    <span class="c1"># Print loss function</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loss function:&quot;</span><span class="p">,</span> <span class="n">L_function</span><span class="p">)</span>
+
+    <span class="c1"># Create list which will hold betas from previous iteration to compare loss function from previous to current step</span>
+    <span class="c1"># I do it to check whether to break out of the loop because the step is small enough</span>
+    <span class="n">betas_previous</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">betas_vals</span><span class="p">))]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100000</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Iteration number&quot;</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># fill beta values from previous step</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">betas_vals</span><span class="p">)):</span>
+            <span class="n">betas_previous</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">betas_vals</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="c1"># Optimize betas</span>
+        <span class="n">gradient_descent_algorithm</span><span class="p">(</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">y_vals</span><span class="p">,</span> <span class="n">x_vals</span><span class="p">,</span> <span class="n">betas_vals</span><span class="p">,</span> <span class="n">gradient_functions</span><span class="p">)</span>
+        <span class="c1"># Compare losses from previous step to current -&gt; break from loop if loss is small</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">sum_loss_function</span><span class="p">(</span><span class="n">y_vals</span><span class="p">,</span> <span class="n">x_vals</span><span class="p">,</span> <span class="n">betas_vals</span><span class="p">,</span> <span class="n">L_function</span><span class="p">)</span> <span class="o">-</span> <span class="n">sum_loss_function</span><span class="p">(</span><span class="n">y_vals</span><span class="p">,</span> <span class="n">x_vals</span><span class="p">,</span> <span class="n">betas_previous</span><span class="p">,</span> <span class="n">L_function</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.00001</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="c1"># Print optimized betas</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Optimized betas:&quot;</span><span class="p">,</span> <span class="n">betas_vals</span><span class="p">)</span>
+
+    <span class="c1"># Print actual and predicted y</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_vals</span><span class="p">)):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Actual y:&quot;</span><span class="p">,</span> <span class="n">y_vals</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;- Predicted y:&quot;</span><span class="p">,</span> <span class="n">betas_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">betas_vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">x_vals</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">betas_vals</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">x_vals</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">betas_vals</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">x_vals</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+</code></pre></div>
+
+<p><strong>Everything that we coded generate the following output</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">Loss</span> <span class="n">function</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="n">betas</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">betas</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">x_values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">betas</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">x_values</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">betas</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="n">x_values</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">y_actual</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+<span class="n">Iteration</span> <span class="n">number</span> <span class="mi">1</span>
+<span class="n">Iteration</span> <span class="n">number</span> <span class="mi">2</span>
+<span class="o">...</span>
+<span class="n">Iteration</span> <span class="n">number</span> <span class="mi">99999</span>
+<span class="n">Iteration</span> <span class="n">number</span> <span class="mi">100000</span>
+<span class="n">Optimized</span> <span class="n">betas</span><span class="p">:</span> <span class="p">[</span><span class="mf">15.39260868874023</span><span class="p">,</span> <span class="mf">11.865689746680127</span><span class="p">,</span> <span class="o">-</span><span class="mf">12.9318031446267</span><span class="p">,</span> <span class="o">-</span><span class="mf">34.0024362801841</span><span class="p">]</span>
+<span class="n">Actual</span> <span class="n">y</span><span class="p">:</span> <span class="o">-</span><span class="mf">37.04</span> <span class="o">-</span> <span class="n">Predicted</span> <span class="n">y</span><span class="p">:</span> <span class="o">-</span><span class="mf">36.43352569380147</span>
+<span class="n">Actual</span> <span class="n">y</span><span class="p">:</span> <span class="o">-</span><span class="mf">207.0</span> <span class="o">-</span> <span class="n">Predicted</span> <span class="n">y</span><span class="p">:</span> <span class="o">-</span><span class="mf">208.41909800180952</span>
+<span class="n">Actual</span> <span class="n">y</span><span class="p">:</span> <span class="o">-</span><span class="mf">312.9</span> <span class="o">-</span> <span class="n">Predicted</span> <span class="n">y</span><span class="p">:</span> <span class="o">-</span><span class="mf">311.9795070914377</span>
+</code></pre></div>
+
+<p><strong><em>Important sidenote</em></strong>: The whole procedure is very sensitive to the learning rate. It is possible that the step size is so large that the minimum is completely skipped and even a higher numerical value of the convex function is reached than intended. If this happens, i.e. the loss becomes larger and larger, then the learning rate must be reduced further! What also helps is to standardize the data <span class="math">\(x\)</span> and <span class="math">\(y\)</span> before (between 0 and 1). This is very common in machine learning. If you then want to use the optimized beta factors, you must always standardize the data according to the same scheme as in the optimization procedure.</p>
+<p>This was my post about implementing the gradient descent algorithm for multiple linear regression models. I hope you enjoyed it! The full, aggregated code can also be found here: <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Multiple%20Linear%20Regression">github.com/Heuristic-Analyst/…</a></p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

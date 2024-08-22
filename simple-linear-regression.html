@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Simple Linear Regression</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <meta name="description" content="Simple method of creating a simple linear regression using two formulas and coding it in Python" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li><a href="/category/fundamentals.html">Fundamentals</a></li>
+                    <li class="active"><a href="/category/machine-learning.html">Machine Learning</a></li>
+                    <li><a href="/category/quant.html">Quant</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/simple-linear-regression.html" rel="bookmark"
+           title="Permalink to Simple Linear Regression">Simple Linear Regression</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2022-06-11T12:00:00+02:00">
+                Published: Sat 11 June 2022
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/machine-learning.html">Machine Learning</a>.</p>
+<p>tags: <a href="/tag/code.html">Code</a> <a href="/tag/machine-learning.html">Machine Learning</a> </p>
+</footer><!-- /.post-info -->      <p>In this post, I write about a simple method of creating a simple linear regression using two formulas.</p>
+<p>“Simple Linear Regression” is a linear regression model with a singl explanatory variable. A linear regression trys to fit the data with a linear line, hence linear regression.</p>
+<p><strong>A linear model follows the following equation</strong>:
+</p>
+<div class="math">$$y = m \cdot x + b$$</div>
+<p>Where:</p>
+<ul>
+<li><span class="math">\(m\)</span>: slope</li>
+<li><span class="math">\(b\)</span>: interception with <span class="math">\(\text{y-axis}\)</span></li>
+</ul>
+<p>Look at the following picture:<br>
+<img alt="Simple Linear Regression" src="/images/2022_06_11_article_1_picture_1.png"></p>
+<ul>
+<li>In grey we got the datapoints we want to forecast</li>
+<li><span class="math">\(y\)</span> is the dependent variable. <span class="math">\(x\)</span> is the independent variable</li>
+<li>The linear model we try to get is the blue one</li>
+<li>The forecasts the linear model does are <span class="math">\(\hat{y}\)</span></li>
+</ul>
+<p>The best linear model here (using ordinary least squares optimization) is the one which minimizes the sum of the squared differences.</p>
+<p>Sum of squared differences:<br>
+</p>
+<div class="math">$$\sum (y_i - \bar{y})^2$$</div>
+<p>We square the differences to get rid of the effect that differences of datapoints under the linear model would cancel out with the differences of datapoints above the linear model (the distance is then negative and positive and when added together cancel out).</p>
+<p>To optimize (minimize) the sums of squared differences we will use the following equations to get the <span class="math">\(\text{slope }m\)</span> and <span class="math">\(\text{interception }b\)</span> with the <span class="math">\(\text{y-axis}\)</span>:<br>
+</p>
+<div class="math">$$m = \frac{\sum(x_i - \bar{x})(y_i - \bar{y})}{\sum(x_i - \bar{x})^2}$$</div>
+<div class="math">$$b = \bar{y} - m \times \bar{x}$$</div>
+<p><strong><em>Sidenote</em></strong>: <span class="math">\(m\)</span> is basically the covariance of <span class="math">\((X,Y)\)</span> divided by variance of <span class="math">\(X\)</span> (<span class="math">\(N\)</span> (or <span class="math">\(N-1\)</span>) in covariance and variance formula cancel each other out)</p>
+<p>If you calculated both, <span class="math">\(m\)</span> and <span class="math">\(b\)</span>, your linear model (<span class="math">\(y = m  \cdot x + b\)</span>) is fitted to the data and ready to be tested and then maybe even used!</p>
+<p>Simple linear regression in Python: <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Simple%20Linear%20Regression">(github.com/Heuristic-Analyst/…)</a></p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">)]</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">70</span><span class="o">*</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mi">1000</span><span class="o">-</span><span class="mi">250</span><span class="p">))</span><span class="o">+</span><span class="mi">130</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">)]</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div>
+
+<p><img alt="Test data" src="/images/2022_06_11_article_1_picture_2.png"></p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">linear_regression</span><span class="p">(</span><span class="n">x_values</span><span class="p">:</span><span class="nb">list</span><span class="p">,</span> <span class="n">y_values</span><span class="p">:</span><span class="nb">list</span><span class="p">):</span>
+    <span class="n">x_mean</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">y_mean</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">m_sum_numerator</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">m_sum_denominator</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_values</span><span class="p">)):</span>
+        <span class="n">x_mean</span> <span class="o">+=</span> <span class="n">x_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">y_mean</span> <span class="o">+=</span> <span class="n">y_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">x_mean</span> <span class="o">/=</span> <span class="n">n</span>
+    <span class="n">y_mean</span> <span class="o">/=</span> <span class="n">n</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_values</span><span class="p">)):</span>
+        <span class="n">m_sum_numerator</span> <span class="o">+=</span> <span class="p">(</span><span class="n">x_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_mean</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">y_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_mean</span><span class="p">)</span>
+        <span class="n">m_sum_denominator</span> <span class="o">+=</span> <span class="p">(</span><span class="n">x_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="n">m</span> <span class="o">=</span> <span class="n">m_sum_numerator</span> <span class="o">/</span> <span class="n">m_sum_denominator</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">-</span> <span class="n">m</span> <span class="o">*</span> <span class="n">x_mean</span>
+
+    <span class="k">return</span> <span class="n">m</span><span class="p">,</span> <span class="n">b</span>
+</code></pre></div>
+
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">m</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">linear_regression</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+<span class="n">Output</span> <span class="o">&gt;&gt;&gt;</span> <span class="o">-</span><span class="mf">69.8562263813947</span> <span class="mf">17009.049915164287</span>
+</code></pre></div>
+
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="n">y_predict</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">x_values</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+    <span class="n">y_predict</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="o">*</span><span class="n">x_values</span><span class="o">+</span><span class="n">b</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">y_predict</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div>
+
+<p><img alt="Linear Regession" src="/images/2022_06_11_article_1_picture_3.png"></p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

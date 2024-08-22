@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Markov Chains – NLP | text generation from scratch</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <meta name="description" content="Create a simple, primitive text generator using Markov Chains" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li><a href="/category/fundamentals.html">Fundamentals</a></li>
+                    <li class="active"><a href="/category/machine-learning.html">Machine Learning</a></li>
+                    <li><a href="/category/quant.html">Quant</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/markov-chains-nlp-text-generation-from-scratch.html" rel="bookmark"
+           title="Permalink to Markov Chains – NLP | text generation from scratch">Markov Chains – NLP | text generation from scratch</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2022-08-13T12:00:00+02:00">
+                Published: Sat 13 August 2022
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/machine-learning.html">Machine Learning</a>.</p>
+<p>tags: <a href="/tag/code.html">Code</a> <a href="/tag/machine-learning.html">Machine Learning</a> <a href="/tag/quant.html">Quant</a> </p>
+</footer><!-- /.post-info -->      <p>Today I would like to create a simple, primitive text generator using Markov chains (I explained them in a <a href="/markov-chains-explained.html">previous post</a>).</p>
+<p>Necessary steps for this project:</p>
+<ol>
+<li>Get text to learn from</li>
+<li>Create the transition matrix</li>
+<li>Generate text</li>
+</ol>
+<p>I will do everything from scratch, but I will a library called “tqdm” to show a progress bar of a for loop.</p>
+<h1>Get text to learn from:</h1>
+<p>First we need to get data. I will use Wikipedia to mine free text data. The output will be a <em>.txt</em> file with the text as one big string – I will not go into much detail here since it is not the main topic of this post. I will use the Wikipedia pages of <em>Psychology, Philosophy and Sigmund_Freud</em>:<br></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Import package</span>
+<span class="kn">from</span> <span class="nn">urllib.request</span> <span class="kn">import</span> <span class="n">urlopen</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="k">def</span> <span class="nf">downloadWikiText</span><span class="p">(</span><span class="n">urls</span><span class="p">):</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">urls</span><span class="p">):</span>
+        <span class="c1"># Specify url of the web page</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="c1"># Make a soup</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">source</span><span class="p">,</span><span class="s1">&#39;lxml&#39;</span><span class="p">)</span>
+        <span class="c1"># Extract the plain text content from paragraphs</span>
+        <span class="k">for</span> <span class="n">paragraph</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s1">&#39;p&#39;</span><span class="p">):</span>
+            <span class="n">text</span> <span class="o">+=</span> <span class="n">paragraph</span><span class="o">.</span><span class="n">text</span>
+
+        <span class="c1"># Clean text</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\[.*?\]+&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="c1"># Append space for next text</span>
+        <span class="n">text</span> <span class="o">+=</span> <span class="s2">&quot; &quot;</span>
+    <span class="c1"># Remove last &quot; &quot; and then save text as a file</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;wiki_text.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+<span class="n">urls</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;https://en.wikipedia.org/wiki/Psychology&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;https://en.wikipedia.org/wiki/Philosophy&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;https://en.wikipedia.org/wiki/Sigmund_Freud&quot;</span><span class="p">]</span>
+<span class="n">downloadWikiText</span><span class="p">(</span><span class="n">urls</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Now the text is saved in “<em>./wiki_text.txt</em>”.</p>
+<h1>Create the transition matrix:</h1>
+<p>The following code will the these steps:</p>
+<ol>
+<li>Open wiki_text.txt and save text in a variable</li>
+<li>delete every non-alphanumeric symbol and convert string text to a list with each word as an element of the text (all words will be lowercase)</li>
+<li>Create a list will all unique words</li>
+<li>Create the transition matrix which will be a square matrix with the length of the unique words list</li>
+<li>Iterate through the wiki text:<ol>
+<li>Find current word</li>
+<li>Find next word</li>
+<li>Add the occurence of the transition (from current to next word) to the transition matrix by adding 1 to the corresponding cell</li>
+</ol>
+</li>
+<li>Since the probability of all next words from the current word should be 1 -&gt; divide transition matrix rows by its sum</li>
+<li>
+<p>Save unique words and corresponding transition matrix</p>
+<p>:::python
+import re
+from tqdm import tqdm</p>
+<h1>open text file with gathered wiki text</h1>
+<p>with open('wiki_text.txt', 'r', encoding='utf-8') as f:
+    text = f.read()</p>
+<h1>get only words out of it - replaces all symbols like !,? etc...</h1>
+<h1>first substitute every non-alphanumeric character with " ", then:</h1>
+<h1>if double, triple, ... spaces exist just replace them with one space, afterwards split text into a list</h1>
+<p>text = re.sub(" +", " ", re.sub(r"[^a-zA-Z0-9]", " ", text)).split(" ")</p>
+<h1>delete all "" in list</h1>
+<p>text = list(filter(lambda a: a != "", text))</p>
+<h1>make every word lowercase</h1>
+<p>text = [x.lower() for x in text]</p>
+<h1>get every word one time and sort the list alphabetically</h1>
+<p>unique_words = sorted(list(set(text)))</p>
+<h1>create transition matrix - square matrix</h1>
+<p>transition_matrix = [[0 for j in range(len(unique_words))] for i in range(len(unique_words))]</p>
+<h1>add each occurrence of state transition into the transition matrix</h1>
+<p>for i in tqdm(range(len(text)-1)):
+    # current word in text (index in unique word list)
+    current_state = unique_words.index(text[i])
+    # next word in text (index in unique word list)
+    future_state = unique_words.index(text[i+1])
+    # add 1 to state transition in matrix
+    transition_matrix[current_state][future_state] += 1</p>
+<h1>divide each row by the sum of each row</h1>
+<p>for i in tqdm(range(len(transition_matrix))):
+    if text[-1] != unique_words[i]:
+        sum_row = 0
+        for number_of_occurrences in transition_matrix[i]:
+            sum_row += number_of_occurrences
+        for j in range(len(transition_matrix[i])):
+            transition_matrix[i][j] /= sum_row</p>
+<h1>save unique words and transition matrix</h1>
+<p>with open('unique_words.txt', 'w', encoding='utf-8') as f:
+    f.write(str(unique_words))
+with open('transition_matrix.txt', 'w', encoding='utf-8') as f:
+    f.write(str(transition_matrix))</p>
+</li>
+</ol>
+<h1>Generate text:</h1>
+<p>The following code will do these steps:</p>
+<ol>
+<li>Open unique words list and transition matrix list/array – both as a string</li>
+<li>Convert both string lists to actual lists with the “json” library</li>
+<li>Set a starting phrase/word and number of words as well as number of sentences to be generated</li>
+<li>Create loop for each sentence:<ol>
+<li>Create loop for each word:<ol>
+<li>get current state</li>
+<li>get to next state by random choice with probability distribution from transition matrix</li>
+<li>add word to sentence</li>
+<li>set next state to current state</li>
+<li>Repeat until number of words and number of sentences are generated</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>
+<p>Print sentences – will differ every time</p>
+<p>:::python
+import json
+import random
+from tqdm import tqdm</p>
+<h1>open unique words and calculated transition matrix</h1>
+<p>with open('unique_words.txt', 'r', encoding='utf-8') as f:
+    unique_words = f.read()
+with open('transition_matrix.txt', 'r', encoding='utf-8') as f:
+    transition_matrix = f.read()</p>
+<h1>convert string representation of list to actual list using json.loads()</h1>
+<p>unique_words = json.loads(unique_words.replace("'", '"'))
+print("Unique words:", len(unique_words))
+transition_matrix = json.loads(transition_matrix)</p>
+<h1>generate random text by giving a start word (must be included in the training text)</h1>
+<p>starting_phrase = "Sigmund Freud"
+length_of_sentences = 20    # words
+number_of_sentences = 10</p>
+<h1>get "Freud" as the starting word</h1>
+<p>start_word = starting_phrase.split(" ")[-1]
+current_word = start_word.lower()
+sentences = [starting_phrase.lower() for i in range(number_of_sentences)]
+for i in tqdm(range(number_of_sentences)):
+    for j in range(length_of_sentences):
+        current_state = unique_words.index(current_word)
+        try:
+            next_state = random.choices(unique_words, transition_matrix[current_state])[0]
+            current_word = next_state
+            sentences[i] += " " + current_word
+        except:
+            break
+for i in range(len(sentences)):
+    print(str(i+1)+". sentence:", sentences[i])</p>
+</li>
+</ol>
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Output</span>
+<span class="n">Unique</span> <span class="n">words</span><span class="p">:</span> <span class="mi">6402</span>
+<span class="mf">1.</span> <span class="n">sentence</span><span class="p">:</span> <span class="n">sigmund</span> <span class="n">freud</span> <span class="n">s</span> <span class="n">grandson</span> <span class="n">ernst</span> <span class="n">simmel</span> <span class="n">founded</span> <span class="ow">in</span> <span class="n">an</span> <span class="n">example</span> <span class="n">newton</span> <span class="n">s</span> <span class="n">directorship</span> <span class="n">the</span> <span class="n">dora</span> <span class="n">a</span> <span class="n">person</span> <span class="n">s</span> <span class="n">daughter</span> <span class="n">s</span> <span class="n">method</span> <span class="ow">and</span>
+<span class="mf">2.</span> <span class="n">sentence</span><span class="p">:</span> <span class="n">sigmund</span> <span class="n">freud</span> <span class="n">ego</span> <span class="n">it</span> <span class="n">was</span> <span class="n">cremated</span> <span class="n">at</span> <span class="n">johns</span> <span class="n">hopkins</span> <span class="n">university</span> <span class="n">led</span> <span class="n">to</span> <span class="n">one</span> <span class="n">independent</span> <span class="n">variable</span> <span class="n">at</span> <span class="n">golders</span> <span class="n">green</span> <span class="n">crematorium</span> <span class="n">s</span> <span class="n">sense</span> <span class="n">philosophy</span>
+<span class="mf">3.</span> <span class="n">sentence</span><span class="p">:</span> <span class="n">sigmund</span> <span class="n">freud</span> <span class="n">of</span> <span class="n">questions</span> <span class="n">about</span> <span class="n">the</span> <span class="n">brain</span> <span class="n">was</span> <span class="n">dominated</span> <span class="n">by</span> <span class="n">the</span> <span class="n">feminine</span> <span class="n">mystique</span> <span class="mi">1963</span> <span class="n">declared</span> <span class="n">assets</span> <span class="ow">and</span> <span class="n">then</span> <span class="n">various</span> <span class="n">traditions</span> <span class="n">were</span> <span class="n">a</span>
+<span class="mf">4.</span> <span class="n">sentence</span><span class="p">:</span> <span class="n">sigmund</span> <span class="n">freud</span> <span class="n">major</span> <span class="n">trait</span> <span class="ow">or</span> <span class="n">innate</span> <span class="n">drives</span> <span class="n">a</span> <span class="n">legacy</span> <span class="n">though</span> <span class="n">without</span> <span class="n">which</span> <span class="n">sought</span> <span class="k">as</span> <span class="n">it</span> <span class="n">the</span> <span class="n">most</span> <span class="n">articles</span> <span class="n">recommending</span> <span class="n">medical</span> <span class="n">doctors</span> <span class="n">psychology</span>
+<span class="mf">5.</span> <span class="n">sentence</span><span class="p">:</span> <span class="n">sigmund</span> <span class="n">freud</span> <span class="n">emerged</span> <span class="k">as</span> <span class="n">military</span> <span class="n">the</span> <span class="n">theoretical</span> <span class="n">work</span> <span class="n">permits</span> <span class="n">were</span> <span class="n">the</span> <span class="n">qing</span> <span class="n">dynasty</span> <span class="n">through</span> <span class="n">stories</span> <span class="ow">and</span> <span class="n">to</span> <span class="n">engineer</span> <span class="n">the</span> <span class="n">nose</span> <span class="ow">and</span> <span class="n">the</span>
+<span class="mf">6.</span> <span class="n">sentence</span><span class="p">:</span> <span class="n">sigmund</span> <span class="n">freud</span> <span class="n">importance</span> <span class="n">of</span> <span class="n">castration</span> <span class="nb">complex</span> <span class="n">concludes</span> <span class="n">that</span> <span class="n">male</span> <span class="bp">self</span> <span class="k">as</span> <span class="n">a</span> <span class="n">much</span> <span class="n">information</span> <span class="n">quickly</span> <span class="n">found</span> <span class="n">that</span> <span class="n">allow</span> <span class="n">one</span> <span class="n">s</span> <span class="n">case</span> <span class="n">they</span>
+<span class="mf">7.</span> <span class="n">sentence</span><span class="p">:</span> <span class="n">sigmund</span> <span class="n">freud</span> <span class="n">are</span> <span class="n">we</span> <span class="n">come</span> <span class="n">readily</span> <span class="n">to</span> <span class="n">work</span> <span class="n">of</span> <span class="n">neuroanatomy</span> <span class="mi">42</span> <span class="n">countries</span> <span class="k">for</span> <span class="n">freud</span> <span class="n">s</span> <span class="n">early</span> <span class="n">buddhist</span> <span class="n">philosophy</span> <span class="n">include</span> <span class="n">selective</span> <span class="n">attrition</span> <span class="n">the</span>
+<span class="mf">8.</span> <span class="n">sentence</span><span class="p">:</span> <span class="n">sigmund</span> <span class="n">freud</span> <span class="nb">set</span> <span class="n">out</span> <span class="n">the</span> <span class="n">nature</span> <span class="n">of</span> <span class="n">freud</span> <span class="n">theorized</span> <span class="n">that</span> <span class="n">freud</span> <span class="n">hoped</span> <span class="n">to</span> <span class="n">vienna</span> <span class="n">general</span> <span class="n">hospital</span> <span class="ow">in</span> <span class="n">the</span> <span class="nb">complex</span> <span class="n">this</span> <span class="n">period</span> <span class="n">began</span>
+<span class="mf">9.</span> <span class="n">sentence</span><span class="p">:</span> <span class="n">sigmund</span> <span class="n">freud</span> <span class="n">smoking</span> <span class="ow">and</span> <span class="n">behavioral</span> <span class="n">neuroscience</span> <span class="n">uses</span> <span class="n">the</span> <span class="n">birth</span> <span class="n">which</span> <span class="n">had</span> <span class="n">first</span> <span class="n">to</span> <span class="n">increase</span> <span class="n">through</span> <span class="n">to</span> <span class="n">test</span> <span class="n">freud</span> <span class="n">he</span> <span class="n">had</span> <span class="n">a</span> <span class="n">small</span>
+<span class="mf">10.</span> <span class="n">sentence</span><span class="p">:</span> <span class="n">sigmund</span> <span class="n">freud</span> <span class="n">number</span> <span class="n">of</span> <span class="n">his</span> <span class="n">patients</span> <span class="n">assured</span> <span class="n">him</span> <span class="kn">from</span> <span class="nn">western</span> <span class="n">electric</span> <span class="n">s</span> <span class="n">ideas</span> <span class="n">are</span> <span class="n">content</span> <span class="n">of</span> <span class="n">the</span> <span class="n">group</span> <span class="n">of</span> <span class="n">such</span> <span class="n">an</span> <span class="n">illusion</span>
+</code></pre></div>
+
+<p>As you can see the sentences do not make sense, but their grammar is mostly correct though. A very good outcome, considering we only worked with 6402 unique words!</p>
+<p>This was a first step into understanding NLP. As always the code can be found here on my github <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Markov%20Chains%20-%20NLP">(www.github.com/Heuristic-Analyst/…)</a>. Cheers!</p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

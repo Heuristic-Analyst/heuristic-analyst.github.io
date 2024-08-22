@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Heuristic Analyst - Math basics</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="/category/math-basics.html">Math basics</a></li>
+                    <li><a href="/category/math-basics-code.html">Math basics; Code</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+
+            <aside id="featured" class="body">
+                <article>
+                    <h1 class="entry-title"><a href="/covariance-and-correlation.html">Covariance and Correlation</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2022-05-28T12:00:00+02:00">
+                Published: Sat 28 May 2022
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/math-basics.html">Math basics</a>.</p>
+
+</footer><!-- /.post-info --><p>Right away the most important thought in this post:<br>
+- Covariance by itself only gives the direction of correlatedness<br>
+- Without knowing the scales of your variables, you can’t tell which variables are more correlated</p>
+<p>Imagine we have a sample <span class="math">\(X\)</span> filled with weight values of people. In addition we also have another sample <span class="math">\(Y\)</span> with height values of people. Now one can plot both samples <span class="math">\(X\)</span> and <span class="math">\(Y\)</span> on a xy-coordinate – as a result we would get a scatter plot.</p>
+<p>With the calculation of the covariance of <span class="math">\(X\)</span> and <span class="math">\(Y\)</span> we can see the 3 possible relationships between both:<br>
+- Positive covariance – positive trend – weight rises and height rises<br>
+- Negative covariance – negative trend  – weight decline and height decline covariance equals 0 – no trend – same height but rising or declinging weight (or vice verca)</p>
+<p>The formula of a covariance of <span class="math">\(X\)</span> and <span class="math">\(Y\)</span> – <span class="math">\(\text{cov}(X,Y)\)</span> – is the following:</p>
+<p><strong>Formula to calculate covariance for a population:</strong><br>
+</p>
+<div class="math">$$\text{Cov}_{\text{population}}(X,Y) = \sum_{i=1}^N \frac{ (x_i - \bar{x})(y_i - \bar{y})}{N}$$</div>
+<p><strong>Formula to calculate covariance for a sample:</strong><br>
+</p>
+<div class="math">$$\text{Cov}_{\text{sample}}(X,Y) = \sum_{i=1}^{N-1}\frac{ (x_i - \bar{x})(y_i - \bar{y})}{N - 1}$$</div>
+<p>where:<br>
+- <span class="math">\(x_i\)</span> and <span class="math">\(y_i\)</span> = Population/sample values<br>
+- <span class="math">\(\bar{x}\)</span> and <span class="math">\(\bar{y}\)</span> = Mean of all given <span class="math">\(x\)</span> and <span class="math">\(y\)</span><br>
+- <span class="math">\(N\)</span> = Number/Amount of given <span class="math">\(x\)</span>-values (same as Amount of given <span class="math">\(y\)</span>-values)</p>
+<p>As you can see in the formula you could swap <span class="math">\(X\)</span> and <span class="math">\(Y\)</span> (<span class="math">\(\text{covariance}(X,Y) = \text{covariance}(Y,X)\)</span>)</p>
+<p><strong><em>Sidenote</em></strong>: For the explanation of why there is a difference in the sample and population covariance look at the previous post <a href="{filename}/articles/21_05_2022_1.md">“Variance and Standard Deviation“</a></p>
+<p>In the formula above one can see that (<span class="math">\(x_i\)</span> – <span class="math">\(\bar{x}\)</span>) can be positive or negative, same for (<span class="math">\(y_i\)</span> – <span class="math">\(\bar{y}\)</span>). Because of that there are four variations with two outcomes in regards to positivity or negativity of the number:<br>
+1. (<span class="math">\(x_i\)</span> – <span class="math">\(\bar{x}\)</span>) can be positive and (<span class="math">\(y_i\)</span> – <span class="math">\(\bar{y}\)</span>) can be positive = positive number<br>
+2. (<span class="math">\(x_i\)</span> – <span class="math">\(\bar{x}\)</span>) can be positive and (<span class="math">\(y_i\)</span> – <span class="math">\(\bar{y}\)</span>) can be negative = negative number<br>
+3. (<span class="math">\(x_i\)</span> – <span class="math">\(\bar{x}\)</span>) can be negative and (<span class="math">\(y_i\)</span> – <span class="math">\(\bar{y}\)</span>) can be positive = positive number<br>
+4. (<span class="math">\(x_i\)</span> – <span class="math">\(\bar{x}\)</span>) can be negative and (<span class="math">\(y_i\)</span> – <span class="math">\(\bar{y}\)</span>) can be negative = negative number<br></p>
+<p>This depends on the distribution of the values (respective the mean value).</p>
+<p>Covariance is the stepping stone to calculate many other things, like the correlation of <span class="math">\(X\)</span> an <span class="math">\(Y\)</span>. The Pearson correlation does not say whether there is a positive, negative trend, but is a measurement of how strong the relationship between <span class="math">\(X\)</span> and <span class="math">\(Y\)</span> is.</p>
+<p>The <strong>formula to calculate the Pearson correlation</strong> is the following:<br>
+</p>
+<div class="math">$$\frac{\text{Covariance}(X,Y)}{\sqrt{\text{Variance}(X)} \cdot \sqrt{\text{Variance}(Y)}}$$</div>
+<p><strong><em>Sidenote</em></strong>: You can also multiply the variances first and take the square root of the product, no difference (square root rule)</p>
+<p>Keep in mind, covariances are not compareable. This is why it is good to get a better grasp of the relationship of covariance and correlation. One can think of correlation being the scaled covariance from 0 to 1, which we achive through scaling it with the individual variations.</p>
+<p>Implementation of covariance and Pearson correlation in Python code: <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Covariance%20and%20correlation">(github.com/Heuristic-Analyst/…)</a></p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">covariance</span><span class="p">(</span><span class="n">x_values</span><span class="p">:</span><span class="nb">list</span><span class="p">,</span> <span class="n">y_values</span><span class="p">:</span><span class="nb">list</span><span class="p">,</span> <span class="n">population_or_sample</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
+    <span class="n">x_mean</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">y_mean</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">sum_x_y_diff</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_values</span><span class="p">)):</span>
+        <span class="n">x_mean</span> <span class="o">+=</span> <span class="n">x_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">y_mean</span> <span class="o">+=</span> <span class="n">y_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">x_mean</span> <span class="o">/=</span> <span class="n">n</span>
+    <span class="n">y_mean</span> <span class="o">/=</span> <span class="n">n</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_values</span><span class="p">)):</span>
+        <span class="n">sum_x_y_diff</span> <span class="o">+=</span> <span class="p">(</span><span class="n">x_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">x_mean</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">y_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">y_mean</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">population_or_sample</span> <span class="o">==</span> <span class="s2">&quot;population&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sum_x_y_diff</span><span class="o">/</span><span class="n">n</span>
+    <span class="k">elif</span> <span class="n">population_or_sample</span> <span class="o">==</span> <span class="s2">&quot;sample&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sum_x_y_diff</span><span class="o">/</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">variance</span><span class="p">(</span><span class="n">x_values</span><span class="p">:</span><span class="nb">list</span><span class="p">,</span> <span class="n">population_or_sample</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
+    <span class="n">x_mean</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">squared_sum_x</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_values</span><span class="p">:</span>
+        <span class="n">x_mean</span> <span class="o">+=</span> <span class="n">x</span>
+        <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">x_mean</span> <span class="o">/=</span> <span class="n">n</span>
+
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_values</span><span class="p">:</span>
+        <span class="n">squared_sum_x</span> <span class="o">+=</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">x_mean</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">if</span> <span class="n">population_or_sample</span> <span class="o">==</span> <span class="s2">&quot;population&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">squared_sum_x</span><span class="o">/</span><span class="n">n</span>
+    <span class="k">elif</span> <span class="n">population_or_sample</span> <span class="o">==</span> <span class="s2">&quot;sample&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">squared_sum_x</span><span class="o">/</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">correlation</span><span class="p">(</span><span class="n">x_values</span><span class="p">:</span><span class="nb">list</span><span class="p">,</span> <span class="n">y_values</span><span class="p">:</span><span class="nb">list</span><span class="p">,</span> <span class="n">population_or_sample</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
+    <span class="n">corr</span> <span class="o">=</span> <span class="n">covariance</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">y_values</span><span class="p">)</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">variance</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">population_or_sample</span><span class="p">)</span> <span class="o">*</span> <span class="n">variance</span><span class="p">(</span><span class="n">y_values</span><span class="p">,</span> <span class="n">population_or_sample</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">corr</span>
+</code></pre></div>
+
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>                </article>
+            </aside><!-- /#featured -->
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

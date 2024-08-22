@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Gather data from SEC – EDGAR | CIK mapping, submissions and description</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <meta name="description" content="get the official CIK mapping and all submissions made by a company as well as its own little description from SEC - EDGAR" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li><a href="/category/fundamentals.html">Fundamentals</a></li>
+                    <li><a href="/category/machine-learning.html">Machine Learning</a></li>
+                    <li class="active"><a href="/category/quant.html">Quant</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/gather-data-from-sec-edgar-cik-mapping-submissions-and-description.html" rel="bookmark"
+           title="Permalink to Gather data from SEC – EDGAR | CIK mapping, submissions and description">Gather data from SEC – EDGAR | CIK mapping, submissions and description</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2022-08-03T12:00:00+02:00">
+                Published: Wed 03 August 2022
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/quant.html">Quant</a>.</p>
+<p>tags: <a href="/tag/code.html">Code</a> <a href="/tag/finance.html">Finance</a> <a href="/tag/quant.html">Quant</a> </p>
+</footer><!-- /.post-info -->      <p>Bonjour! Today I present you my work on how to get the official CIK mapping and all submissions made by a company as well as its own little description!</p>
+<p>If you click here – <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Gather%20data%20from%20SEC%20-%20EDGAR">https://github.com/Heuristic-Analyst/…</a> – you will find some files I wrote which can do the things I just described.</p>
+<p>For clarification reasons:</p>
+<ul>
+<li>CIK mapping: Every company in the US can be found on the SEC website. They use a database which is publicly available for API queries, called “EDGAR”. Every company got an index, the Central Index Key (CIK). The gathered mapping enables us to get company data by the name of the company or the ticker (because its mapped to one another, hence CIK mapping)</li>
+<li>Submissions: Every company must file now and then some forms, like the 10-K (annually report – forpublicly traded companies), 10-Q, etc… These filings are all indexed in the SEC’s database. With the CIK number of a company we can find all submissions ever made – with form name, filing date, reporting date, some database related numbers and more.</li>
+</ul>
+<p>The API endpoints we are gathering data from are the following:</p>
+<ul>
+<li>CIK mapping: <a href="https://www.sec.gov/files/company_tickers.json">https://www.sec.gov/files/company_tickers.json</a></li>
+<li>Lets say we found Apple Inc.’s CIK number – 0000320193:<ul>
+<li>Submissions and description: <a href="https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json">https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json</a></li>
+</ul>
+</li>
+</ul>
+<p>Important to note is that I have read somewhere that the CIK number can change over time, and obviously the name of the company too!</p>
+<p>In the github you can change the ticker and title arrays in the params object to get gather the data (make sure they are included in the CikData.csv):</p>
+<div class="highlight"><pre><span></span><code><span class="n">let</span> <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>  
+    <span class="o">...</span>
+        <span class="s2">&quot;ticker&quot;</span><span class="p">:</span>   <span class="p">[</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;AAPL&quot;</span><span class="p">],</span> 
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span>    <span class="p">[</span><span class="s2">&quot;Tesla, Inc.&quot;</span><span class="p">,</span> <span class="s2">&quot;TAIWAN SEMICONDUCTOR MANUFACTURING CO LTD&quot;</span><span class="p">,</span> <span class="s2">&quot;DANAHER CORP /DE/&quot;</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>The code is commented, if questions come up just write me an email, cheers!</p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

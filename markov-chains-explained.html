@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Markov Chains Explained</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <meta name="description" content="Explaining “Markov Chains”" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li><a href="/category/fundamentals.html">Fundamentals</a></li>
+                    <li class="active"><a href="/category/machine-learning.html">Machine Learning</a></li>
+                    <li><a href="/category/quant.html">Quant</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/markov-chains-explained.html" rel="bookmark"
+           title="Permalink to Markov Chains Explained">Markov Chains Explained</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2022-08-12T12:00:00+02:00">
+                Published: Fri 12 August 2022
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/machine-learning.html">Machine Learning</a>.</p>
+<p>tags: <a href="/tag/code.html">Code</a> <a href="/tag/machine-learning.html">Machine Learning</a> <a href="/tag/quant.html">Quant</a> </p>
+</footer><!-- /.post-info -->      <p>Hope you are doing well! Today I will explain “Markov Chains” as a prerequisite for a future post.</p>
+<p>Content of this post:</p>
+<ul>
+<li>Short description of Markov chains – What are they</li>
+<li>Detailed explaination of Markov chains – using a weather example</li>
+<li>How to calculate the state probabilities<ol>
+<li>random walk</li>
+<li>equilibrium</li>
+<li>eigenvector approach – with brief summary of eigenvectors and eigenvalues</li>
+</ol>
+</li>
+<li>Nice to know property about Markov chains</li>
+<li>Hint about the future post</li>
+</ul>
+<h1>Short description:</h1>
+<p><em>“A Markov chain or Markov process is a stochastic model describing a sequence of possible events in which the probability of each event depends only on the state attained in the previous event.”</em><br>
+<a href="https://en.wikipedia.org/wiki/Markov_chain">https://en.wikipedia.org/wiki/Markov_chain</a></p>
+<p>This is the best, short description of it, which is why I quote it! Important in the quote is the “… the probability of each event depends only on the state attained in the previous event”. Read the sentence until you can understand it. Now Let’s explain Markov chains in detail!</p>
+<h1>Detailed explaination of Markov chains:</h1>
+<p>Let’s suppose that we got 3 states the weather can be – cloudy, rainy and sunny. Each of these states can lead to another or the same, future state. The diagram would look like this:<br>
+<img alt="Markov Chains 1" src="/images/2022_08_12_article_1_picture_1.png"><br>
+This transition, from the present state to the future state, has a probability (lets assume we know the numbers):<br>
+<img alt="Markov Chains 2" src="/images/2022_08_12_article_1_picture_2.png"><br>
+This already is a Markov Chain. In the diagram you can see the sunny state. It can lead to a sunny state with a probability of 20%, to a cloudy state (p=40%) and a rainy state (p=40%).<br>
+<img alt="Markov Chains 3" src="/images/2022_08_12_article_1_picture_3.png"><br>
+</p>
+<div class="math">$$\text{diagram – each state can lead to future states – probability adds up to 1 (colored for each state)}$$</div>
+<p><br>
+We can also seperate the probabilities from the diagram into a table for a more formal way of writing and understanding them:<br>
+<img alt="Markov Chains 4" src="/images/2022_08_12_article_1_picture_4.png"><br>
+</p>
+<div class="math">$$Markov chain probabilities$$</div>
+<h1>How to calculate the state probabilities:</h1>
+<h2>Random walk approach:</h2>
+<p>Now we might want to know how probable a state is. Our first attempt to answer this question is using a random walk. I will create a code which will generate a random walk of the states with the given probabilities (from the diagram). Then we just need to divide the occurrences of each state by the number of states generated in the random walk, just like in this example:<br>
+<img alt="Markov Chains 5" src="/images/2022_08_12_article_1_picture_5.png"></p>
+<p>Random walk code with n = 100.000 – written in Python:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># see here how to sample a random number from a random distribution with Python:</span>
+<span class="c1">#https://www.adamsmith.haus/python/answers/how-to-sample-a-random-number-from-a-probability-distribution-in-python</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="c1"># all states in one list</span>
+<span class="n">states</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cloudy&quot;</span><span class="p">,</span><span class="s2">&quot;rainy&quot;</span><span class="p">,</span> <span class="s2">&quot;sunny&quot;</span><span class="p">]</span>
+<span class="c1"># create transition matrix - same order as in &quot;states&quot;</span>
+<span class="n">transition_matrix</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>   <span class="c1"># cloudy</span>
+                    <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>   <span class="c1"># rainy</span>
+                    <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]]</span>   <span class="c1"># sunny</span>
+<span class="c1"># will hold every random walk</span>
+<span class="n">random_walk</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1"># begin with a random state - I just used 1/n as the probability to start with each state</span>
+<span class="n">current_state</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+<span class="c1"># run random walk 100.000 times</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100000</span><span class="p">):</span>
+    <span class="c1"># get index of current state in states list</span>
+    <span class="n">state_index</span> <span class="o">=</span> <span class="n">states</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">current_state</span><span class="p">)</span>
+    <span class="c1"># random selection of a state with the distribution in the transition matrix - current state = new state</span>
+    <span class="n">current_state</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">transition_matrix</span><span class="p">[</span><span class="n">state_index</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># add current state, which is the new generated state, to the random walk list</span>
+    <span class="n">random_walk</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_state</span><span class="p">)</span>
+
+<span class="n">occurrences</span> <span class="o">=</span> <span class="p">[</span><span class="n">random_walk</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;cloudy&quot;</span><span class="p">),</span> <span class="n">random_walk</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;rainy&quot;</span><span class="p">),</span> <span class="n">random_walk</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;sunny&quot;</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Verify n:&quot;</span><span class="p">,</span> <span class="n">occurrences</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">occurrences</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">occurrences</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Probabilities:&quot;</span><span class="p">,</span> <span class="n">occurrences</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">100000</span><span class="p">,</span> <span class="n">occurrences</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">100000</span><span class="p">,</span><span class="n">occurrences</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mi">100000</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">random_walk</span><span class="p">)</span>
+</code></pre></div>
+
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Output:</span>
+<span class="n">Verify</span> <span class="n">n</span><span class="p">:</span> <span class="mi">100000</span>
+<span class="n">Probabilities</span><span class="p">:</span> <span class="mf">0.3932</span> <span class="mf">0.36791</span> <span class="mf">0.23889</span>
+<span class="p">[</span><span class="s1">&#39;sunny&#39;</span><span class="p">,</span> <span class="s1">&#39;cloudy&#39;</span><span class="p">,</span> <span class="s1">&#39;rainy&#39;</span><span class="p">,</span> <span class="s1">&#39;cloudy&#39;</span><span class="p">,</span> <span class="s1">&#39;sunny&#39;</span><span class="p">,</span> <span class="s1">&#39;cloudy&#39;</span><span class="p">,</span> <span class="s1">&#39;sunny&#39;</span><span class="p">,</span> <span class="s1">&#39;sunny&#39;</span><span class="p">,</span> <span class="s1">&#39;rainy&#39;</span><span class="p">,</span> <span class="s1">&#39;rainy&#39;</span><span class="p">,</span> <span class="s1">&#39;cloudy&#39;</span><span class="p">,</span> <span class="s1">&#39;sunny&#39;</span><span class="p">,</span><span class="o">...</span><span class="p">]</span>
+</code></pre></div>
+
+<p>As we calclated the probabilities for each state with the random walk we got to these numbers:</p>
+<ul>
+<li>p(cloudy) = 0.3932</li>
+<li>p(rainy) = 0.36791</li>
+<li>p(sunny) = 0.23889</li>
+</ul>
+<h1>Equilibrium approach:</h1>
+<p>Now lets get to the juicy stuff – not approximate the probobility of each state but calculate it!</p>
+<p>For it we will use the the transition matrix (same as in the code). Now suppose we <strong>start with a random state,</strong> <strong><em>e.g. rainy</em></strong>. Then the <strong>state distribution for today</strong>, a rainy day, is <strong>100% rainy, 0% cloudy and 0% sunny</strong>.</p>
+<p>Because of that the row vector (<em>todays state</em> – cloudy, rainy, sunny) will look like this:<br>
+</p>
+<div class="math">$$\pi_i = [0, 1, 0]$$</div>
+<p><strong><em>Side note</em></strong>: this equilibrium is often also refert as the stationary state – denoted as <span class="math">\(\pi\)</span></p>
+<p>Lets call the transition matrix “A”. To now calculate the probability of each state, can be also seen as the equilirium state, we will multiply πᵢ with A and get the the row vektor <span class="math">\(\pi_{i+1}\)</span> (next day/state):<br>
+</p>
+<div class="math">$$\begin{equation}
+(0 \quad 1 \quad 0) \times 
+\begin{pmatrix}
+0.1 &amp; 0.6 &amp; 0.3 \\
+0.7 &amp; 0.1 &amp; 0.2 \\
+0.4 &amp; 0.4 &amp; 0.2
+\end{pmatrix} 
+= (0.7 \quad 0.1 \quad 0.2)
+\end{equation}$$</div>
+<div class="math">$$\pi_i \times A = \pi_{i+1}$$</div>
+<p>To get the equilibrium:</p>
+<ul>
+<li>We need to calculate the new state i+2 by calculating <span class="math">\(\pi_{i+1} \times A = \pi_{i+2}\)</span></li>
+<li>We will do this until <span class="math">\(\pi_n = \pi_{n+1}\)</span> → equilibrium found</li>
+</ul>
+<h1>Equilibrium Python code – using Numpy:</h1>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="c1"># all states in one list</span>
+<span class="n">states</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cloudy&quot;</span><span class="p">,</span><span class="s2">&quot;rainy&quot;</span><span class="p">,</span> <span class="s2">&quot;sunny&quot;</span><span class="p">]</span>
+<span class="c1"># create transition matrix A - same order as in &quot;states&quot;</span>
+<span class="n">A</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>   <span class="c1"># cloudy</span>
+    <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>   <span class="c1"># rainy</span>
+    <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]]</span>   <span class="c1"># sunny</span>
+
+<span class="c1"># start with a random state, lets say rainy</span>
+<span class="n">pi</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">pi_previous</span> <span class="o">=</span> <span class="n">pi</span>
+<span class="c1"># convert matrices to numpy matrices</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="n">pi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span>
+<span class="n">pi_previous</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pi_previous</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="c1"># dot product of pi x A</span>
+    <span class="n">pi</span> <span class="o">=</span> <span class="n">pi</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+    <span class="c1"># if pi = pi_previous -&gt; equilibrium found (pi will not change after it)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">pi</span><span class="o">==</span><span class="n">pi_previous</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="k">break</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pi_previous</span> <span class="o">=</span> <span class="n">pi</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span>
+</code></pre></div>
+
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Output:</span>
+<span class="p">[</span><span class="s1">&#39;cloudy&#39;</span><span class="p">,</span> <span class="s1">&#39;rainy&#39;</span><span class="p">,</span> <span class="s1">&#39;sunny&#39;</span><span class="p">]</span>
+<span class="p">[</span><span class="mf">0.39263804</span><span class="p">,</span> <span class="mf">0.36809816</span><span class="p">,</span> <span class="mf">0.2392638</span><span class="p">]</span>
+</code></pre></div>
+
+<p>We now can compare these results with the results from the random walk:</p>
+<ul>
+<li>deviation(cloudy): Absolut(0.39263804 / 0.3932 – 1)= 0.1429%</li>
+<li>deviation(rainy): Absolut(0.36809816 / 0.36791 – 1) = 0.0511%</li>
+<li>deviation(sunny): Absolut(0.2392638 / 0.23889 – 1) = 0.1565%</li>
+</ul>
+<p>As we can see we were very close to the actual propabilities!</p>
+<h1>Eigenvector approach:</h1>
+<p>Now we can go one step further and look into the equation <span class="math">\(\pi \times A = \pi\)</span></p>
+<p>We calculated π with our code above by finding the equilibrium. If you look at the equation you might see some similarities with another famous equation: the eigenvector equation</p>
+<h2>Brief summary of eigenvectors and eigenvalues:</h2>
+<p>Lets say we have a 2 vectors – they can be combined into one matrix:<br>
+</p>
+<div class="math">$$\text{vector 1 } \begin{pmatrix}2\\4\end{pmatrix} \text{ and vector 2 } \begin{pmatrix}5\\0\end{pmatrix} \rightarrow \text{ combined to a matrix } \begin{pmatrix}2 &amp; 5\\4 &amp; 0\end{pmatrix}$$</div>
+<p><br>
+If we now have another vector we could multiply it with the matrix:<br>
+</p>
+<div class="math">$$A \times v_i = \begin{pmatrix}2 &amp; 5\\4 &amp; 0\end{pmatrix} \times \begin{pmatrix}7\\3\end{pmatrix} = \begin{pmatrix}29\\28\end{pmatrix}$$</div>
+<p><br>
+<img alt="Markov Chains 6" src="/images/2022_08_12_article_1_picture_6.png"></p>
+<p>As you can see in the example above a multiplication of a matrix A with a vector <span class="math">\(v_i\)</span> is nothing else then a transformation of the vector <span class="math">\(v_i\)</span> into another vector <span class="math">\(v_j\)</span>. The transformation transforms the vector’s length and rotate it.</p>
+<p>If a vector <span class="math">\(v_i\)</span> is transformed into a vector <span class="math">\(v_e\)</span> and vector <span class="math">\(v_e\)</span> stays on the same span (meaning on the same line) as <span class="math">\(v_i\)</span>, then this vector <span class="math">\(v_i\)</span>, aswell as <span class="math">\(v_e\)</span> and every other vector on the same span as them, are eigenvectors.</p>
+<p>The factor by which the vector <span class="math">\(v_i\)</span> gets streched/squished is called the eigenvalue.</p>
+<p>The eigenvector equation is the following one: Av = λv (read important side note)</p>
+<ul>
+<li>A is the linear transformation matrix</li>
+<li>v is a vector (eigenvector)</li>
+<li><span class="math">\(\lambda\)</span> is a factor, the eigenvalue</li>
+</ul>
+<p>The meaning behind the equation is that an eigenvector linear transformed (<span class="math">\(A \times v\)</span>) is equal to the same eigenvector times a factor – which is exactly what I wrote before!</p>
+<p>Very important note:
+There are 2 eigenvector: left and right eigenvectors
+Difference lies in calculation:
+– A right eigenvector is calculated by the following eigenvector equation: <span class="math">\(A v = \lambda v\)</span>
+→ the vector v is a column vector
+– A right eigenvector is calculated by the following eigenvector equation: <span class="math">\(v A = \lambda v\)</span>
+→ the vector v is a row vector</p>
+<h2>Connection of Markov chain equilibrium equation and Eigenvector equation:</h2>
+<p>So we got the Markov Chain equilibrium equation <span class="math">\(\pi \times A = \pi\)</span> and the left eigenvector equation <span class="math">\(v \times A = \lambda \times v\)</span>.</p>
+<p>As we seen before π denotes a probability distribution, which is why the sum of <span class="math">\(\pi\)</span>’s elements must add up to 1. This is the same as setting the eigenvalue <span class="math">\(\lambda\)</span> to 1 in the Eigenvector equation.</p>
+<p>With these informations we can now easily calculate the equilibrium(s):
+We can now calculate each eigenvector of the transition matrix of the Markov chain with the eigenvalue 1 and voilà, we calculated the probability distribution of each state! Lets code that:</p>
+<h2>Left eigenvector of transition matrix:</h2>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">linalg</span>
+<span class="c1"># all states in one list</span>
+<span class="n">states</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cloudy&quot;</span><span class="p">,</span><span class="s2">&quot;rainy&quot;</span><span class="p">,</span> <span class="s2">&quot;sunny&quot;</span><span class="p">]</span>
+<span class="c1"># create transition matrix A - same order as in &quot;states&quot;</span>
+<span class="n">A</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>   <span class="c1"># cloudy</span>
+    <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>   <span class="c1"># rainy</span>
+    <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]]</span>   <span class="c1"># sunny</span>
+
+<span class="c1"># convert matrix to numpy matrix</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+<span class="c1"># calculate eigenvalues and eigenvectors</span>
+<span class="n">eigenvalues</span><span class="p">,</span> <span class="n">eigenvectors</span> <span class="o">=</span> <span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># probability distribution vector should add up to one - same as lambda of eigenvector equation is 1</span>
+<span class="c1"># -&gt; divide each vector element by the sum of each vector&#39;s element</span>
+<span class="n">eigenvectors</span> <span class="o">=</span> <span class="n">eigenvectors</span><span class="o">/</span><span class="n">eigenvectors</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<span class="c1"># transpose eigenvectors matrix to get a vector easily out of the matrix</span>
+<span class="n">eigenvectors</span> <span class="o">=</span> <span class="n">eigenvectors</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+<span class="c1"># loop through each vector and see if all elements of vector are greater or equal to zero</span>
+<span class="c1"># (because there are no negative probabilities)</span>
+<span class="c1"># save valid eigenvectors in &quot;equilibriums</span>
+<span class="n">equilibriums</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">eigenvectors</span><span class="p">)):</span>
+    <span class="n">isGreaterEqualZero</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">eigenvectors</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>
+        <span class="k">if</span> <span class="n">eigenvectors</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">isGreaterEqualZero</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">isGreaterEqualZero</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">equilibriums</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">eigenvectors</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>
+            <span class="n">equilibriums</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eigenvectors</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Every eigenvector with lambda 1 and elements greater or equal zero:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">equilibriums</span><span class="p">)</span>
+</code></pre></div>
+
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Output</span>
+<span class="n">Every</span> <span class="n">eigenvector</span> <span class="k">with</span> <span class="k">lambda</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">elements</span> <span class="n">greater</span> <span class="ow">or</span> <span class="n">equal</span> <span class="n">zero</span><span class="p">:</span>
+<span class="p">[[</span><span class="mf">0.39263803680981585</span><span class="p">,</span> <span class="mf">0.3680981595092024</span><span class="p">,</span> <span class="mf">0.2392638036809816</span><span class="p">]]</span>
+</code></pre></div>
+
+<p>We can now compare the eigenvector (could also be more then one eigenvector, meaning multiple equilbria, depending on the starting state) to the before calculated equilibrium:</p>
+<ul>
+<li>Before we got this equilibrium: [0.39263804, 0.36809816, 0.2392638]</li>
+<li>Now we got: [0.39263803680981585, 0.3680981595092024, 0.2392638036809816]</li>
+</ul>
+<p>As you can see we calculated the same numbers as the eigenvector, but rounded to the 8th number.</p>
+<h1>Nice to know property about Markov chains:</h1>
+<p>Lets work with the same transition matrix A as before:<br>
+</p>
+<div class="math">$$A = \begin{pmatrix}
+0.1 &amp; 0.6 &amp; 0.3 \\
+0.7 &amp; 0.1 &amp; 0.2 \\
+0.4 &amp; 0.4 &amp; 0.2
+\end{pmatrix}$$</div>
+<p>Now the following question might interest you: What is the probability of getting from state “cloudy” to state “sunny” in 1 step?</p>
+<p>To answer this you would look into the matrix A in the “cloudy” row (first row) and look into the 3rd column (“sunny”) (recap Markov chains above if you did not understand this). For steps n=1 the probability to start at “cloudy” and end up at “sunny” is p=0.3.</p>
+<p>But what if we want to the probability of starting at “cloudy” and end up at “sunny” when we take 2 steps?</p>
+<p>There are several paths that lead us from “cloudy” to “sunny”. I will now write down each path with each probability calculation:</p>
+<ol>
+<li>“cloudy” → “cloudy” → “sunny”: 0.1*0.3=0.03</li>
+<li>“cloudy” → “rainy” → “sunny”: 0.6*0.2=0.12</li>
+<li>“cloudy” → “sunny” → “sunny”: 0.3*0.2=0.06</li>
+</ol>
+<p>For steps n=2 the probability to start at “cloudy” and end up at “sunny” is p=0.03+0.12+0.06=0.21.</p>
+<p>Now what do you notice here? You just made a dot product (matrix multiplication) of 2 vectors – one row vector of the first row in the matrix A with a column vector, being the last column of the matrix A:<br>
+</p>
+<div class="math">$$(0.1 \quad 0.6 \quad 0.3) \times 
+\begin{pmatrix}
+0.3 \\
+0.2 \\
+0.2
+\end{pmatrix} 
+= 0.21$$</div>
+<p>Why is that? If you start with your first step at “cloudy” you can end up at every other state with a certain probability. This is represented by the first vector. Now you need to end up at “sunny”. So you multiply the vector with the probability vector to end up at “sunny”, represented by the second vector.</p>
+<p>If you want to know every probability – starting and ending at a specific state, after n steps – you just need to multiply the matrix n times by itself:
+</p>
+<div class="math">$$n = 2: A^n = A^2 = 
+\begin{pmatrix}
+0.1 &amp; 0.6 &amp; 0.3 \\
+0.7 &amp; 0.1 &amp; 0.2 \\
+0.4 &amp; 0.4 &amp; 0.2
+\end{pmatrix} \times
+\begin{pmatrix}
+0.1 &amp; 0.6 &amp; 0.3 \\
+0.7 &amp; 0.1 &amp; 0.2 \\
+0.4 &amp; 0.4 &amp; 0.2
+\end{pmatrix} =
+\begin{pmatrix}
+0.55 &amp; 0.24 &amp; 0.21 \\
+0.22 &amp; 0.51 &amp; 0.27 \\
+0.4 &amp; 0.36 &amp; 0.24
+\end{pmatrix}$$</div>
+<p>If you calculated Aⁿ you can just read the probabilities – in the example above we can see, that for n=2 the “cloudy” to “sunny” state transition probability (with 2 steps) matches (p=21%). You can do it for how many steps you like!</p>
+<p>I hope you understood everything.<br>
+As always, every code written can be found directly here on my github: <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Markov%20Chains%2C%20Eigenvectors%20and%20Eigenvalues">github.com/Heuristic-Analyst/…</a><br>
+Cheers!</p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

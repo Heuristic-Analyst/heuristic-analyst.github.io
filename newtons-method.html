@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Newton’s method</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <meta name="description" content="Explaining Newton’s method, how it works and coding it in Python" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="/category/fundamentals.html">Fundamentals</a></li>
+                    <li><a href="/category/machine-learning.html">Machine Learning</a></li>
+                    <li><a href="/category/quant.html">Quant</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/newtons-method.html" rel="bookmark"
+           title="Permalink to Newton’s method">Newton’s method</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2022-06-04T12:00:00+02:00">
+                Published: Sat 04 June 2022
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/fundamentals.html">Fundamentals</a>.</p>
+<p>tags: <a href="/tag/code.html">Code</a> <a href="/tag/math-basics.html">Math basics</a> </p>
+</footer><!-- /.post-info -->      <p>In this post I will shortly explain what Newton’s method is and how it works.</p>
+<p><strong>What is it:</strong></p>
+<ul>
+<li>Newton’s method is an algorithm to find zeropoints of a function</li>
+<li>Because you cannot always calculate the exact zeropoint we can use this algorithm to approximate the zeros of the function<br><br></li>
+</ul>
+<p><strong>How does it work:</strong></p>
+<ol>
+<li>Start at a random <span class="math">\(\text{point }A\)</span> of the function</li>
+<li>Calculate the <span class="math">\(\text{tangent }T\)</span> at this <span class="math">\(\text{point }A\)</span></li>
+<li>Calculate the intersection between the <span class="math">\(\text{x-axis}\)</span> and the <span class="math">\(\text{tangent }T\)</span></li>
+<li>Take the <span class="math">\(\text{x-value}\)</span> of the intersection point (<span class="math">\(\text{x-axis}\)</span> and the <span class="math">\(\text{tangent }T\)</span>), calculate the <span class="math">\(\text{y-value}\)</span> (<span class="math">\(f(x)\)</span>)  → new <span class="math">\(\text{point }B\)</span> at <span class="math">\((x|y)\)</span> → becomes <span class="math">\(\text{point }A\)</span></li>
+<li>Repeat the steps 2 - 4 (<em>like +500 times</em>) → approximation of the zeropoint<br><br></li>
+</ol>
+<p><strong><em>Important sidenote</em></strong>:<br>
+You should try to start with a nearby point to the actual zeropoint, because it might be that you would get a solution which is just wrong. This might be the case if you would get to a point with the slope of a tangent being 0, which does not have one intersection point with the x-axis (saddle point).</p>
+<p><strong>Interesting fact – Approximate square root numbers</strong>:<br>
+With this approximation we can also calculate/approximate square roots, like <span class="math">\(\sqrt{2}\)</span> (irrational number).
+To calculate the square root of 2 with Newton’s method we would first create a function (polynomial) where <span class="math">\(f(\sqrt{2})\)</span> = 0 (zeropoint at <span class="math">\(\sqrt{2}\)</span>).</p>
+<p><strong>How to achive this</strong>:</p>
+<div class="math">$$
+\begin{align}
+x &amp;= \sqrt{2}    &amp;&amp; |^{2} \\
+x^{2} &amp;= 2       &amp;&amp; |– 2 \\
+x^{2} – 2 &amp;= 0 \\
+f(x) &amp;= x^{2} – 2
+\end{align}
+$$</div>
+<p><strong>Step by step math for Newton’s method</strong>:</p>
+<ol>
+<li>Start at <span class="math">\(\text{point }A\)</span> and calculate the slope</li>
+<li>linear function is <span class="math">\(y = m \cdot x + b\)</span> → we got <span class="math">\(m\)</span> (the calculated slope) and the <span class="math">\(\text{point }A\)</span> throught which the line goes → calculate <span class="math">\(b\)</span>: <span class="math">\(b = y - (m \cdot x)\)</span></li>
+<li>To calculate the intersection of the tangent and the <span class="math">\(\text{x-axis}\)</span> set <span class="math">\(y\)</span> to <span class="math">\(0\)</span>: <span class="math">\(0 = m \cdot x + b\)</span> → we got <span class="math">\(m\)</span> and <span class="math">\(b\)</span>, so we need to calculate <span class="math">\(x\)</span> → <span class="math">\(x = \frac{y - b}{m} = \frac{0 - b}{m}\)</span></li>
+<li>Calculate the new <span class="math">\(\text{point }B\)</span> of the function with <span class="math">\(f(x)\)</span> and repeat the steps</li>
+</ol>
+<p>Python code example to approximate <span class="math">\(\sqrt{2}\)</span> with Newton’s method: <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Newtons%20method">(github.com/Heuristic-Analyst/…)</a></p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">newtons_method</span><span class="p">(</span><span class="n">iterations</span><span class="p">:</span><span class="nb">int</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">function_one</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">function_one_derivative</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">y</span><span class="o">-</span><span class="p">(</span><span class="n">m</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="o">-</span><span class="n">b</span><span class="p">)</span><span class="o">/</span><span class="n">m</span>
+    <span class="k">return</span> <span class="n">x</span>
+
+
+<span class="k">def</span> <span class="nf">function_one</span><span class="p">(</span><span class="n">x</span><span class="p">:</span><span class="nb">float</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="mi">2</span>
+
+
+<span class="k">def</span> <span class="nf">function_one_derivative</span><span class="p">(</span><span class="n">x</span><span class="p">:</span><span class="nb">float</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mi">2</span><span class="o">*</span><span class="n">x</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">newtons_method</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="o">&gt;&gt;</span> <span class="n">Output</span><span class="p">:</span> <span class="mf">1.414213562373095</span>
+</code></pre></div>
+
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

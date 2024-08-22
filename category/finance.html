@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Heuristic Analyst - Finance</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="/category/finance.html">Finance</a></li>
+                    <li><a href="/category/fundamentals.html">Fundamentals</a></li>
+                    <li><a href="/category/machine-learning.html">Machine Learning</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+
+            <aside id="featured" class="body">
+                <article>
+                    <h1 class="entry-title"><a href="/markowitz-efficient-frontier-portfolio-optimization-from-scratch-with-python.html">Markowitz Efficient frontier – Portfolio optimization from scratch with Python</a></h1>
+<footer class="post-info">
+        <abbr class="published" title="2022-07-03T12:00:00+02:00">
+                Published: Sun 03 July 2022
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/finance.html">Finance</a>.</p>
+<p>tags: <a href="/tag/code.html">Code</a> <a href="/tag/finance.html">Finance</a> <a href="/tag/machine-learning.html">Machine Learning</a> <a href="/tag/quant.html">Quant</a> </p>
+</footer><!-- /.post-info --><p>Hello people of finance and tech lovers, today I would like to create a Python code which will be able to construct a mean-variance optimal stock portfolio. The theory is based on Harry Markowitz’s work. Lets begin with the fun!</p>
+<p><strong>Structure of this post:</strong></p>
+<ul>
+<li><strong>Metrics</strong>: How to calculate the portfolio return and volatility (I hope everyone knows what returns and volatility/standard deviation are)</li>
+<li><strong>Theory</strong>: Some theory behind Harry Markowitz efficient frontier</li>
+<li><strong>Code</strong>: Code the portfolio optimization script</li>
+</ul>
+<h1>Metrics</h1>
+<p>Portfolio return: In a given portfolio we can easily calculate the portfolio return by multiplying each asset return with each weight of the portfolio and then adding them up:<br>
+</p>
+<div class="math">$$r_{portfolio} = \sum weight_i \cdot  return_i$$</div>
+<p><strong><em>Sidenote</em></strong>: if, for whatever reason, you would like to work with log returns later, then please adjust the math accordingly</p>
+<p><strong>Annualize returns</strong>: For comparison reasons we will annualize and compound the returns. We will work with daily data. Lets say we got <strong>180 days of daily stock returns</strong> of an asset. Stocks <strong>trade about 252 days per year</strong>. If we want to calculate the annualized compounded return with these numbers <strong>we would calculate it the following way</strong>:<br>
+</p>
+<div class="math">$$return_{annualized} = (return_{asset})^\frac{252}{180}$$</div>
+<p><strong>Annulaized portfolio volatility</strong>: Unlike returns we cannot just add up the standard deviations of assets in a portfolio. Because of intercorrelations between the assets we calculate the volatility (standard deviation of the portfolio) as follows:<br>
+</p>
+<div class="math">$$volatility_{annualized} = \sqrt{weights^T \cdot covariancematrix_{annualized} \cdot weights}$$</div>
+<ol>
+<li>First we calculate the covariance matrix of our returns</li>
+<li>Then we annualize them by multiplying every covariance in the matrix by an annulization factor (in our example with <span class="math">\(\frac{252}{180}\)</span>)</li>
+<li>Then we perform these matrix multiplications where we transpose the weights of the portfolio, calculate the product with the covariance matrix and then multiply it again with the weight vector</li>
+<li>Last step is to take the square root of the variance to get the standard deviation/volatility</li>
+</ol>
+<h1>Theory</h1>
+<p>Harry Markowitz, the father of <em>modern portfolio theory</em>, showed in his paper <em>“Portfolio Selection” (1952)</em> for the first time that risk of a portfolio of assets is not linear. These shown inter-relationships of risk can then be used to construct a portfolio which will achive the same return as another portfolio but with less volatility. What is done is to calculate the optimal weights to achive a optimal portfolio with the given assets.</p>
+<p>We will construct our portfolio using a convex optimizer called <em>“CVXPY”</em> (Python library). It will optimize our objective under certain constraints. In the Python code below I will minimize the risk by minimize the variance, which will automatically minimize the standard deviation/volatility. The constraints are that the sum of the weights should add up to 1 (100%) and that we will only go long (<span class="math">\(weights_i &gt;= 0\)</span>). Below you can find these and some other ideas of objectives and constraints under which you can optimize your portfolio:</p>
+<p><strong>Objectives</strong>:</p>
+<ul>
+<li>
+<p>Minimize risk:<br>
+<div class="math">$$var = w^T \cdot covarmatrix \cdot w$$</div>
+</p>
+</li>
+<li>
+<p>Maximize return:<br>
+<div class="math">$$r = w^T \cdot returns_{expected}$$</div>
+</p>
+</li>
+<li>
+<p>maximize sharp ratio:<br>
+<div class="math">$$sr = \frac{r - r_{riskfree}}{volatility}$$</div>
+</p>
+</li>
+</ul>
+<p><strong>Constraints</strong>:</p>
+<ul>
+<li>
+<p>Long portfolio – sum of weights should add up to 1:<br>
+<div class="math">$$\sum w = 1$$</div>
+</p>
+</li>
+<li>
+<p>Long portfolio – weights:<br>
+<div class="math">$$w_i &gt;= 0 \text{ and } w_i &lt;=1$$</div>
+</p>
+</li>
+</ul>
+<p>Short portfolio – sum of weights should add up to -1:<br>
+</p>
+<div class="math">$$\sum w = -1$$</div>
+<p>Short portfolio – weights:<br>
+</p>
+<div class="math">$$w_i &gt;= -1 \text{ and } w_i &lt;=0$$</div>
+<p>Market neutral portfolio:<br>
+</p>
+<div class="math">$$\sum w = 0$$</div>
+<p>Long and short portfolio:<br>
+</p>
+<div class="math">$$w_i &gt;= -1 \text{ and } w_i &lt;=1$$</div>
+<p><strong><em>Sidenote</em></strong>: It should be noted that this method is taught in most universities about portfolio theory, which is good but not enough. Estimation of covariance matrices (and their inverses) are often very unstable. Estimates of returns are also hard to make and are often made from their historical values, despite that past performance is not a reliable indicator of future performance. This means that optimizing the portfolio for its performance (<em>weights.Transposed</em>returns*) will not be a good reliable method. Because of these problems a 1/N portfolio, this means that every asset in a portfolio is has the same weight (1/N), will often outperform such kind of portfolio.</p>
+<h1>Code</h1>
+<p><strong>Now lets implement everything in Python</strong>: <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Portfolio%20Optimization%20-%20Efficient%20Frontier">(github.com/Heuristic-Analyst/…)</a></p>
+<p><strong>1.</strong> I will start with the covariance matrix. Look at this post on how to calculate a covariance between two assets. I just copied the code I already wrote for the previous post and adjusted it to calculate covariances for every combination of 2 pairs of assets in a list, because I will hand over a <em>2D list</em> with <em>every asset returns (lists)</em> <em>bundled in a list</em>. So a <em>“returns”-list</em> can look like this: <em>[[1,031, 0.998,…], [1,014, 0.978,…], [1,023, 0.983,…]]</em>. The code will be the following:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">calc_covariancematrix</span><span class="p">(</span><span class="n">returns</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+    <span class="n">covarianzmatrix</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">returns</span><span class="p">))]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">returns</span><span class="p">))]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">returns</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">returns</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;=</span> <span class="n">i</span><span class="p">:</span>
+                <span class="n">covarianzmatrix</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">covariance</span><span class="p">(</span><span class="n">returns</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">returns</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="s2">&quot;sample&quot;</span><span class="p">)</span>
+                <span class="n">covarianzmatrix</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">covarianzmatrix</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">covarianzmatrix</span>
+
+<span class="k">def</span> <span class="nf">covariance</span><span class="p">(</span><span class="n">x_values</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">y_values</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">population_or_sample</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="n">x_mean</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">y_mean</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">sum_x_y_diff</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_values</span><span class="p">)):</span>
+        <span class="n">x_mean</span> <span class="o">+=</span> <span class="n">x_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">y_mean</span> <span class="o">+=</span> <span class="n">y_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">x_mean</span> <span class="o">/=</span> <span class="n">n</span>
+    <span class="n">y_mean</span> <span class="o">/=</span> <span class="n">n</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_values</span><span class="p">)):</span>
+        <span class="n">sum_x_y_diff</span> <span class="o">+=</span> <span class="p">(</span><span class="n">x_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_mean</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">y_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_mean</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">population_or_sample</span> <span class="o">==</span> <span class="s2">&quot;population&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sum_x_y_diff</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="k">elif</span> <span class="n">population_or_sample</span> <span class="o">==</span> <span class="s2">&quot;sample&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sum_x_y_diff</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+
+<p><strong><em>Sidenote</em></strong>: <span class="math">\(Covariance(A,B) = Covariance(B,A)\)</span> and that the length of lists which are being calculated on must be the same length</p>
+<p><strong>2.</strong> Next we will get the data with a public library called “pandas-datareader” which comes in handy to gather daily stock data from yahoo or other sources. Because these are dataframes and I only need the close prices of the assets I will convert them into lists. Also I will save the names of the assets (in the right order) in a seperate list:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pandas_datareader.data</span> <span class="k">as</span> <span class="nn">web</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2018</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">31</span><span class="p">)</span>
+
+    <span class="n">cnp</span> <span class="o">=</span> <span class="n">web</span><span class="o">.</span><span class="n">DataReader</span><span class="p">(</span><span class="s2">&quot;CNP&quot;</span><span class="p">,</span> <span class="s2">&quot;yahoo&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span><span class="o">.</span><span class="n">Close</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">wmt</span> <span class="o">=</span> <span class="n">web</span><span class="o">.</span><span class="n">DataReader</span><span class="p">(</span><span class="s2">&quot;WMT&quot;</span><span class="p">,</span> <span class="s2">&quot;yahoo&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span><span class="o">.</span><span class="n">Close</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">web</span><span class="o">.</span><span class="n">DataReader</span><span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;yahoo&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span><span class="o">.</span><span class="n">Close</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">ge</span> <span class="o">=</span> <span class="n">web</span><span class="o">.</span><span class="n">DataReader</span><span class="p">(</span><span class="s2">&quot;GE&quot;</span><span class="p">,</span> <span class="s2">&quot;yahoo&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span><span class="o">.</span><span class="n">Close</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">telsa</span> <span class="o">=</span> <span class="n">web</span><span class="o">.</span><span class="n">DataReader</span><span class="p">(</span><span class="s2">&quot;TSLA&quot;</span><span class="p">,</span> <span class="s2">&quot;yahoo&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span><span class="o">.</span><span class="n">Close</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="n">price_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;CNP&quot;</span><span class="p">,</span> <span class="s2">&quot;WMT&quot;</span><span class="p">,</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;GE&quot;</span><span class="p">,</span> <span class="s2">&quot;TSLA&quot;</span><span class="p">]</span>
+    <span class="n">price_data</span> <span class="o">=</span> <span class="p">[</span><span class="n">cnp</span><span class="p">,</span> <span class="n">wmt</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ge</span><span class="p">,</span> <span class="n">tesla</span><span class="p">]</span>
+</code></pre></div>
+
+<p><strong>3.</strong> Now lets imagine we calculated some weights and the covariance matrix. With them we can calculate the portfolio volatility like I described before. I will just use pure Python to do it from scratch:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">sqrt</span>
+
+
+<span class="k">def</span> <span class="nf">calc_portfolio_volatility</span><span class="p">(</span><span class="n">portfolio_weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">covariance_matrix</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+    <span class="c1"># volatility = sqrt(w.transposed() * covar-matrix * w)</span>
+    <span class="n">interimResultMatrix1</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">portfolio_weights</span><span class="p">))]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">covariance_matrix</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">portfolio_weights</span><span class="p">)):</span>
+            <span class="n">interimResultMatrix1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">portfolio_weights</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">covariance_matrix</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">volatility</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">interimResultMatrix1</span><span class="p">)):</span>
+        <span class="n">volatility</span> <span class="o">+=</span> <span class="n">interimResultMatrix1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">portfolio_weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">volatility</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">volatility</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">volatility</span>
+</code></pre></div>
+
+<p><strong>4.</strong> Now you will see how I implemented the optimization of minimizing the volatilty function (risk) with the public convex optimization library “CVXPY”. Here we need to create the variables (weights vector with length of number of assets) which we will optimize. Then create our risk function (not portfolio volatility/standard deviation but variance, because CVXPY can not handle it). Then we create a list with the constraints, that we only go long on assets (weight of asset i &gt; 0) and that the sum of the weights must equal 1 (100% asset allocation of our money). After that we optimize/minimize the risk function under our constraints and then we are finished with this step:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">cvxpy</span> <span class="k">as</span> <span class="nn">cp</span>
+
+
+<span class="c1"># For min volatility</span>
+<span class="k">def</span> <span class="nf">optimize_portfolio_weights_min_volatility</span><span class="p">(</span><span class="n">len_prices_data</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">covariance_matrix</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+    <span class="c1"># portfolio volatility = sqrt(w.transposed * covar-matrix * w) = sqrt(variance)</span>
+    <span class="c1"># We will minimize variance (volatility^2)</span>
+
+    <span class="c1"># Generate weight-variables and save them in &quot;weights&quot; -&gt; will be optimized values</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">Variable</span><span class="p">(</span><span class="n">len_prices_data</span><span class="p">)</span>
+
+    <span class="c1"># Create objective &quot;risk&quot; function to be minimized:</span>
+    <span class="c1"># See here: https://www.cvxpy.org/examples/basic/quadratic_program.html</span>
+    <span class="c1"># that (1/2)*x.transposed*P*x+q.transposed*x is equal to (1/2)*cp.quad_form(x, P) + q.T @ x</span>
+    <span class="c1"># This means that w.transposed() * covar-matrix * w (our risk measure &quot;variance&quot;)</span>
+    <span class="c1">#   is equal to cp.quad_form(weights, covariance_matrix)</span>
+    <span class="n">objective</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">quad_form</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">covariance_matrix</span><span class="p">)</span>
+
+    <span class="c1"># Create constraints list: sum of weights should be 1 and only long assets (every weight &gt; 0)</span>
+    <span class="n">constraint</span> <span class="o">=</span> <span class="p">[</span><span class="nb">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_prices_data</span><span class="p">):</span>
+        <span class="n">constraint</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Solve formulated problem with cvxpy library</span>
+    <span class="n">problem</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">Problem</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">Minimize</span><span class="p">(</span><span class="n">objective</span><span class="p">),</span> <span class="n">constraint</span><span class="p">)</span>
+    <span class="n">problem</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+    <span class="c1"># Save optimized weight-values in &quot;optimized_weights&quot;</span>
+    <span class="n">optimized_weights</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">value</span><span class="p">)):</span>
+        <span class="n">optimized_weights</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="c1"># Return solution</span>
+    <span class="k">return</span> <span class="n">optimized_weights</span>
+</code></pre></div>
+
+<p><strong>5.</strong> In this step i will write the main function which will get the asset prices, asset lables (<em>symbols</em>), amount of days they are trading in one year, frequency of asset data per day and the risk free rate (<em>like a U.S. 10 Year Treasury: right now round about 0.03=3%</em>). With these parameters we will calculate normal returns of each day for each asset, then calculate each annualized, compounded asset return, after which we will calculate the annualized covariance matrix (from step 1). Then we will run the optimization function we have already written in step 4 (<em>“optimize_portfolio_weights_min_volatility()”</em>). After that we will weight each asset return to calculate the portfolio return, then calculate the portfolio volatility with our written function <em>“calc_portfolio_volatility()”</em> in step 3 and after this we will also calculate the sharp ratio (<em>the ratio of return (minus risk free rate) and volatility</em>). As a final step we will format everything in a pretty way to return our solution:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">Covarianzmatrix</span>
+<span class="kn">import</span> <span class="nn">PortfolioVolatility</span>
+
+
+<span class="k">def</span> <span class="nf">PortfolioOptimizationConvexOpt</span><span class="p">(</span><span class="n">prices_data</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">price_symbols</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">frequency_of_data_per_day</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">frequency_of_data_per_year</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">risk_free_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+    <span class="c1"># Calculate returns for each asset - start with last one to affect the next return</span>
+    <span class="c1"># (If I would start to calculate the first return I would change it and not be able to calculate the next return)</span>
+    <span class="n">returns</span> <span class="o">=</span> <span class="p">[[</span><span class="n">prices_data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">/</span><span class="n">prices_data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">prices_data</span><span class="p">[</span><span class="n">i</span><span class="p">]))]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">prices_data</span><span class="p">))]</span>
+
+    <span class="c1"># Calculate each annualized asset return: First multiply returns (or for log returns: sum up)</span>
+    <span class="c1"># and then return^(annualized compound factor)-1</span>
+    <span class="c1"># if daily returns: frequency_of_data_per_day = 1; if stock data: frequency_of_data_per_year = 252</span>
+    <span class="c1"># -&gt; compound factor is 252/1 if only one day data is given to annualize it -&gt; if for example 300 days worth</span>
+    <span class="c1"># of data then: (252/1)/300 to annualize the returns</span>
+    <span class="n">assetReturns</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">returns</span><span class="p">))]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">returns</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">returns</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>
+            <span class="n">assetReturns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="n">returns</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+        <span class="n">assetReturns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">assetReturns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="p">((</span><span class="n">frequency_of_data_per_year</span><span class="o">/</span><span class="n">frequency_of_data_per_day</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">returns</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="c1"># Calculate covariance matrix with pure python (2d, square matrix; length = amount of assets)</span>
+    <span class="c1"># Price data must be unweighted, because scaling affects the covariance calculation</span>
+    <span class="n">covarianceMatrix</span> <span class="o">=</span> <span class="n">Covarianzmatrix</span><span class="o">.</span><span class="n">calc_covariancematrix</span><span class="p">(</span><span class="n">returns</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">covarianceMatrix</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">covarianceMatrix</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>
+            <span class="n">covarianceMatrix</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="n">frequency_of_data_per_year</span><span class="o">/</span><span class="n">frequency_of_data_per_day</span><span class="p">)</span>
+
+    <span class="c1"># optimize portfolio weights by minimizing volatility</span>
+    <span class="n">optimized_weights_min_volatility</span> <span class="o">=</span> <span class="n">PortfolioVolatility</span><span class="o">.</span><span class="n">optimize_portfolio_weights_min_volatility</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">returns</span><span class="p">),</span> <span class="n">covarianceMatrix</span><span class="p">)</span>
+
+    <span class="c1"># Calculate annualized portfolio return - just sum up the weighted returns</span>
+    <span class="n">portfolioReturn</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">assetReturns</span><span class="p">)):</span>
+        <span class="n">portfolioReturn</span> <span class="o">+=</span> <span class="n">assetReturns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">optimized_weights_min_volatility</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="c1"># Calculate volatility sigma with the matrix multiplication formula:</span>
+    <span class="c1"># sigma = volatility = square root( transposed(weights) * covariance matrix * weights)</span>
+    <span class="n">volatility</span> <span class="o">=</span> <span class="n">PortfolioVolatility</span><span class="o">.</span><span class="n">calc_portfolio_volatility</span><span class="p">(</span><span class="n">optimized_weights_min_volatility</span><span class="p">,</span> <span class="n">covarianceMatrix</span><span class="p">)</span>
+
+    <span class="c1"># Calculate the sharp ratio</span>
+    <span class="n">sharpRatio</span> <span class="o">=</span> <span class="p">(</span><span class="n">portfolioReturn</span><span class="o">-</span><span class="n">risk_free_rate</span><span class="p">)</span> <span class="o">/</span> <span class="n">volatility</span>
+
+    <span class="c1"># Assignment of asset names to weights</span>
+    <span class="n">optimized_weights</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">optimized_weights_min_volatility</span><span class="p">)):</span>
+        <span class="n">optimized_weights</span><span class="p">[</span><span class="n">price_symbols</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">optimized_weights_min_volatility</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="c1"># Create dict which will contain the portfolio return, volatility, sharp ratio and weights for optimized portfolio</span>
+    <span class="n">portfolioMetrics</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Portfolio return&quot;</span><span class="p">:</span> <span class="n">portfolioReturn</span><span class="p">,</span> <span class="s2">&quot;Volatility&quot;</span><span class="p">:</span> <span class="n">volatility</span><span class="p">,</span> <span class="s2">&quot;Sharp ratio&quot;</span><span class="p">:</span> <span class="n">sharpRatio</span><span class="p">,</span> <span class="s2">&quot;Weights&quot;</span><span class="p">:</span> <span class="n">optimized_weights</span><span class="p">}</span>
+
+    <span class="c1"># Return the results at the end</span>
+    <span class="k">return</span> <span class="n">portfolioMetrics</span>
+</code></pre></div>
+
+<p><strong>Final step: Optimize our portfolio</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pandas_datareader.data</span> <span class="k">as</span> <span class="nn">web</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">PortfolioOptimizationConvexOpt</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2018</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">31</span><span class="p">)</span>
+
+    <span class="n">CNP</span> <span class="o">=</span> <span class="n">web</span><span class="o">.</span><span class="n">DataReader</span><span class="p">(</span><span class="s2">&quot;CNP&quot;</span><span class="p">,</span> <span class="s2">&quot;yahoo&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span><span class="o">.</span><span class="n">Close</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">WMT</span> <span class="o">=</span> <span class="n">web</span><span class="o">.</span><span class="n">DataReader</span><span class="p">(</span><span class="s2">&quot;WMT&quot;</span><span class="p">,</span> <span class="s2">&quot;yahoo&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span><span class="o">.</span><span class="n">Close</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="n">web</span><span class="o">.</span><span class="n">DataReader</span><span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;yahoo&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span><span class="o">.</span><span class="n">Close</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">GE</span> <span class="o">=</span> <span class="n">web</span><span class="o">.</span><span class="n">DataReader</span><span class="p">(</span><span class="s2">&quot;GE&quot;</span><span class="p">,</span> <span class="s2">&quot;yahoo&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span><span class="o">.</span><span class="n">Close</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">TSLA</span> <span class="o">=</span> <span class="n">web</span><span class="o">.</span><span class="n">DataReader</span><span class="p">(</span><span class="s2">&quot;TSLA&quot;</span><span class="p">,</span> <span class="s2">&quot;yahoo&quot;</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span><span class="o">.</span><span class="n">Close</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="n">price_symbols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;CNP&quot;</span><span class="p">,</span> <span class="s2">&quot;WMT&quot;</span><span class="p">,</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;GE&quot;</span><span class="p">,</span> <span class="s2">&quot;TSLA&quot;</span><span class="p">]</span>
+    <span class="n">price_data</span> <span class="o">=</span> <span class="p">[</span><span class="n">CNP</span><span class="p">,</span> <span class="n">WMT</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">GE</span><span class="p">,</span> <span class="n">TSLA</span><span class="p">]</span>
+
+    <span class="n">portfolioMetricsCVXOPT</span> <span class="o">=</span> <span class="n">PortfolioOptimizationConvexOpt</span><span class="o">.</span><span class="n">PortfolioOptimizationConvexOpt</span><span class="p">(</span><span class="n">price_data</span><span class="p">,</span> <span class="n">price_symbols</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">252</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">portfolioMetricsCVXOPT</span><span class="p">)</span>
+</code></pre></div>
+
+<p><strong>Output</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span><span class="s1">&#39;Portfolio return&#39;</span><span class="p">:</span> <span class="mf">0.0839471406763497</span><span class="p">,</span> 
+<span class="s1">&#39;Volatility&#39;</span><span class="p">:</span> <span class="mf">0.21908650398113083</span><span class="p">,</span> 
+<span class="s1">&#39;Sharp ratio&#39;</span><span class="p">:</span> <span class="mf">0.2462367133349117</span><span class="p">,</span> 
+<span class="s1">&#39;Weights&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;CNP&#39;</span><span class="p">:</span> <span class="mf">0.10246322843605614</span><span class="p">,</span> 
+            <span class="s1">&#39;WMT&#39;</span><span class="p">:</span> <span class="mf">0.6988277812970941</span><span class="p">,</span> 
+            <span class="s1">&#39;F&#39;</span><span class="p">:</span> <span class="mf">0.1547298490937759</span><span class="p">,</span> 
+            <span class="s1">&#39;GE&#39;</span><span class="p">:</span> <span class="mf">0.027893160907784275</span><span class="p">,</span> 
+            <span class="s1">&#39;TSLA&#39;</span><span class="p">:</span> <span class="mf">0.016085980265289592</span><span class="p">}}</span>
+</code></pre></div>
+
+<p>This was my take on the portfolio optimization (<em>minimal volatility – objective can be changed by you (e.g. maximize return with a given volatility, maximize sharp ratio</em>). As always can the aggregated code be found here on my Github: <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Portfolio%20Optimization%20-%20Efficient%20Frontier">github.com/Heuristic-Analyst/…</a></p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>                </article>
+            </aside><!-- /#featured -->
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

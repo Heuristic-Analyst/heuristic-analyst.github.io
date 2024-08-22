@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Creating a database with MariaDB and Javascript | HFT trading data</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <meta name="description" content="Installing MariaDB, run the database server and access it through Javascript to save real time trades from the Binance futures exchange" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li><a href="/category/fundamentals.html">Fundamentals</a></li>
+                    <li><a href="/category/machine-learning.html">Machine Learning</a></li>
+                    <li class="active"><a href="/category/quant.html">Quant</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/creating-a-database-with-mariadb-and-javascript-hft-trading-data.html" rel="bookmark"
+           title="Permalink to Creating a database with MariaDB and Javascript | HFT trading data">Creating a database with MariaDB and Javascript | HFT trading data</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2022-07-26T12:00:00+02:00">
+                Published: Tue 26 July 2022
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/quant.html">Quant</a>.</p>
+<p>tags: <a href="/tag/code.html">Code</a> <a href="/tag/quant.html">Quant</a> </p>
+</footer><!-- /.post-info -->      <p>In todays post I will walk through the process of installing MariaDB, run the database server and access it through Javascript. In this project I will get real time trades from the Binance futures exchange (BTCUSDT and ETHUSDT). The goal with this post is to create a template database structure to save stock prices, orderbooks or other stuff gathered online via Javascript.</p>
+<p>Why Javascript? To get the data I will use websockets. Javascript is one of the best performing language in various websocket performance comparisons. Javascriptcode can also easily be written asynchronously – when we have multiple websockets, e.g. from multiple exchanges simultaneously, it will be very handy. </p>
+<p>MariaDB is a fork of MySQL. Some developers created it after some concerns of the acquisition of MySQL by Oracle.</p>
+<h1>Install MariaDB</h1>
+<p>First we will need to download and install the MariaDB Server. We can download it on the official website: <a href="https://mariadb.org/download/">https://mariadb.org/download/</a><br>
+<img alt="Install MariaDB 1" src="/images/2022_07_27_article_1_picture_1.png"></p>
+<p>This is the current installation process:<br>
+<img alt="Install MariaDB 2" src="/images/2022_07_27_article_1_picture_2.png"><br>
+<img alt="Install MariaDB 3" src="/images/2022_07_27_article_1_picture_3.png"><br>
+<img alt="Install MariaDB 4" src="/images/2022_07_27_article_1_picture_4.png"><br>
+<img alt="Install MariaDB 5" src="/images/2022_07_27_article_1_picture_5.png"><br>
+<img alt="Install MariaDB 6" src="/images/2022_07_27_article_1_picture_6.png"><br>
+<img alt="Install MariaDB 7" src="/images/2022_07_27_article_1_picture_7.png"><br></p>
+<h1>Run MariaDB server</h1>
+<p>To create and edit a database with MariaDB we need to run it as a server (database server), which is nothing else than a program in the background with which we can access our created databases. Some reference can be found here: <a href="https://mariadb.com/kb/en/mariadb-basics/">https://mariadb.com/kb/en/mariadb-basics/</a></p>
+<p>First we will need to start cmd (I use windows, I do not know what the MacOS or Linux equivalents are nor do I care) and open the directory in which we installed MariaDB with the command “cd”. In my case “cd C:\Program Files\MariaDB 10.8”<br>
+<img alt="Install MariaDB 8" src="/images/2022_07_27_article_1_picture_8.png"></p>
+<p>With the “dir” command we can see every sub-directory in the folder. We will open the “bin” directory:<br>
+<img alt="Install MariaDB 9" src="/images/2022_07_27_article_1_picture_9.png"></p>
+<p>To run the server we will now run the “mysql” program in the “bin” folder using the login of the root user we created in the installation process. The command will be the program name, followed by the username (-u username) followed by the password (-p → enter password after entered the command) followed by the hostname (-h hostname):<br>
+<img alt="Install MariaDB 10" src="/images/2022_07_27_article_1_picture_10.png"></p>
+<p>After initialising the database server correclty it should look something like this:<br>
+<img alt="Install MariaDB 11" src="/images/2022_07_27_article_1_picture_11.png"></p>
+<p>Here are two essential commands:</p>
+<ul>
+<li>To show the current databases available: “show databases;”</li>
+<li>To shutdown the server: “exit”</li>
+</ul>
+<p><img alt="Install MariaDB 12" src="/images/2022_07_27_article_1_picture_12.png"><br>
+<img alt="Install MariaDB 13" src="/images/2022_07_27_article_1_picture_13.png"></p>
+<p>This was the part of how to install and run MariaDB server. Now we will start with how to access MariaDB server through Javascript, create a database, tables and records and edit them. The server does not need to run in the background through cmd to work since we will start the connection from Javascript anyway.</p>
+<h1>Access MariaDB with Javascript</h1>
+<p>We will gather realtime trades data of Binance through a websocket and save the last n trades. Then we save these trades in the database and empty the trades-list to free up the list of recent trades for new trades. We do that to not overload the list with to many trades at once and not to connect, insert and disconnect from the database after every trade.</p>
+<p>First things first: We will use a websocket library called “ws” (<a href="https://www.npmjs.com/package/ws">https://www.npmjs.com/package/ws</a>) to create a websocket connection to the Binance exchange and get realtime futures data. On the “ws” module site you can see some examples if you scroll down a bit (install the library with “npm i ws”). I will build my code with the help of this example code:</p>
+<div class="highlight"><pre><span></span><code><span class="k">import</span><span class="w"> </span><span class="nx">WebSocket</span><span class="w"> </span><span class="kr">from</span><span class="w"> </span><span class="s1">&#39;ws&#39;</span><span class="p">;</span>
+
+<span class="kd">const</span><span class="w"> </span><span class="nx">ws</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">WebSocket</span><span class="p">(</span><span class="s1">&#39;ws://www.host.com/path&#39;</span><span class="p">);</span>
+
+<span class="nx">ws</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;open&#39;</span><span class="p">,</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">open</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="nx">ws</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;something&#39;</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="nx">ws</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">,</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">message</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;received: %s&#39;</span><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="p">);</span>
+<span class="p">});</span>
+</code></pre></div>
+
+<p>After some coding I ended up with the code below which can retrieve real time data of the last trades on BTCUSDT and ETHUSDT (Binance exchange – futures). It saves the last n incoming trades into an array and hand it over to the function which I will create afterwards. The function will then delete all these entries from the array.</p>
+<div class="highlight"><pre><span></span><code><span class="c1">//####################</span>
+<span class="c1">// import ws library</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">WebSocket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">);</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="c1">// log date and time when program started</span>
+<span class="kd">var</span><span class="w"> </span><span class="nx">date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">();</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">date</span><span class="p">.</span><span class="nx">toGMTString</span><span class="p">()</span><span class="si">}</span><span class="sb"> | Program started`</span><span class="p">);</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="c1">// save last n (maxNEntries) trades to this array</span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">tradesData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">maxNEntries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1000</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RunWebsocketBinance</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="c1">// Create an array with our streams which we want to get from Binance and connect to the Binance Websocket</span>
+<span class="c1">// With the &#39;.join(&quot;/&quot;)&#39; we can join the elements of the array to a single string seperated by &quot;/&quot;</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">streamsBinance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;btcusdt@trade&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ethusdt@trade&quot;</span><span class="p">];</span>
+<span class="kd">var</span><span class="w"> </span><span class="nx">wsBinance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">WebSocket</span><span class="p">(</span><span class="s2">&quot;wss://fstream.binance.com/stream?streams=&quot;</span><span class="o">+</span><span class="nx">streamsBinance</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">));</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="c1">// There are different actions this websocket client can have: </span>
+<span class="c1">// When establishing the connection -&gt; &quot;open&quot;</span>
+<span class="c1">// When retrieving a message from binance -&gt; &quot;message&quot;</span>
+<span class="c1">// To keep the connection alive -&gt; &quot;ping&quot; and &quot;pong&quot;</span>
+<span class="c1">// -&gt; https://www.npmjs.com/package/ws: Pong messages are automatically sent in response to ping messages as required by the spec</span>
+<span class="c1">// all the work after each action is done in their functions</span>
+<span class="nx">wsBinance</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;open&quot;</span><span class="p">,</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">openWsBinance</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">date</span><span class="p">.</span><span class="nx">toGMTString</span><span class="p">()</span><span class="si">}</span><span class="sb"> | Connected to Binance Websocket`</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="nx">wsBinance</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">incomingWsBinance</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">//console.log(tradesData.length);//data.toString());</span>
+<span class="w">    </span><span class="nx">tradesData</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nb">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">toString</span><span class="p">())[</span><span class="s2">&quot;data&quot;</span><span class="p">]);</span>
+<span class="w">    </span><span class="c1">// when we collected 1000 messages -&gt; write them into our sql db and empty the messages array in the &quot;insertData&quot; function</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">tradesData</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nx">maxNEntries</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">insertData</span><span class="p">(</span><span class="nx">tradesData</span><span class="p">,</span><span class="w"> </span><span class="nx">maxNEntries</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">});</span>
+
+<span class="nx">wsBinance</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;ping&quot;</span><span class="p">,</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">heartbeatWsBinance</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">date</span><span class="p">.</span><span class="nx">toGMTString</span><span class="p">()</span><span class="si">}</span><span class="sb"> | Got a Ping from Binance | Pong has been sent automatically`</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="nx">wsBinance</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;pong&quot;</span><span class="p">,</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">heartbeatWsBinance</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">date</span><span class="p">.</span><span class="nx">toGMTString</span><span class="p">()</span><span class="si">}</span><span class="sb"> | Got a Pong from Binance`</span><span class="p">);</span>
+<span class="p">});</span>
+<span class="p">}</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="k">await</span><span class="w"> </span><span class="nx">createDB</span><span class="p">();</span>
+<span class="nx">RunWebsocketBinance</span><span class="p">();</span>
+<span class="p">}</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="nx">main</span><span class="p">()</span>
+<span class="c1">//####################</span>
+</code></pre></div>
+
+<p>For the connection between and querying from Javascript and MariaDB I will use the library “mariadb” (<a href="https://www.npmjs.com/package/mariadb">https://www.npmjs.com/package/mariadb</a>). I will not go into the code super detailed since I think that everyone who codes and knows a little bit about Javascript, SQL and queyring should understand it easily. In my code I will create a new database called “cryptoDB” and create two tables. The table “symbols” will hold the names of the cryptocurrencies (like “BTCUSDT”) and their unique ID in the table. The table “trades” will hold the information about the recent trades we retrieve:<br>
+<img alt="Install MariaDB 14" src="/images/2022_07_27_article_1_picture_14.png"></p>
+<div class="highlight"><pre><span></span><code><span class="c1">//####################</span>
+<span class="c1">// import library to connect with mariadb</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">mariadb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s2">&quot;mariadb&quot;</span><span class="p">);</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">createDB</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">conn</span><span class="p">;</span>
+<span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// connect to mariadb using the hostname and our login data</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">pool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">mariadb</span><span class="p">.</span><span class="nx">createPool</span><span class="p">({</span>
+<span class="w">            </span><span class="nx">host</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">            </span><span class="nx">user</span><span class="o">:</span><span class="s2">&quot;root&quot;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">            </span><span class="nx">password</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1234&quot;</span>
+<span class="w">        </span><span class="p">});</span>
+
+<span class="w">        </span><span class="nx">conn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">pool</span><span class="p">.</span><span class="nx">getConnection</span><span class="p">();</span>
+<span class="w">        </span><span class="c1">// create the database</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;DROP DATABASE IF EXISTS cryptodb;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;CREATE DATABASE cryptodb;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// in the created database: create tables &quot;symbols&quot; and &quot;trades&quot;</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;use cryptodb;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;CREATE TABLE symbols(\</span>
+<span class="s2">            ID INT(11) NOT NULL AUTO_INCREMENT,\</span>
+<span class="s2">            Name VARCHAR(50),\</span>
+<span class="s2">            PRIMARY KEY (ID)\</span>
+<span class="s2">            )\</span>
+<span class="s2">            engine=innodb\</span>
+<span class="s2">            DEFAULT CHARACTER SET = utf8;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;CREATE TABLE trades(\</span>
+<span class="s2">            ID INT(11) NOT NULL AUTO_INCREMENT,\</span>
+<span class="s2">            SymbolID INT(11) NOT NULL,\</span>
+<span class="s2">            EventTime BIGINT(11) NOT NULL,\</span>
+<span class="s2">            Price FLOAT(11, 6) NOT NULL,\</span>
+<span class="s2">            Quantity FLOAT(11, 6) NOT NULL,\</span>
+<span class="s2">            TradeTime BIGINT(11) NOT NULL,\</span>
+<span class="s2">            PRIMARY KEY (ID),\</span>
+<span class="s2">            CONSTRAINT fk_SymbolID\</span>
+<span class="s2">            FOREIGN KEY (SymbolID) REFERENCES Symbols (ID)\</span>
+<span class="s2">            ON DELETE NO ACTION\</span>
+<span class="s2">            ON UPDATE NO ACTION\</span>
+<span class="s2">            )\</span>
+<span class="s2">            engine=innodb\</span>
+<span class="s2">            DEFAULT CHARACTER SET = utf8;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">pool</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Something went wrong (creating database)&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">pool</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">insertData</span><span class="p">(</span><span class="nx">trades</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">conn</span><span class="p">;</span>
+<span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// connect to mariadb using the hostname and our login data</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">pool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">mariadb</span><span class="p">.</span><span class="nx">createPool</span><span class="p">({</span>
+<span class="w">            </span><span class="nx">host</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">            </span><span class="nx">user</span><span class="o">:</span><span class="s2">&quot;root&quot;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">            </span><span class="nx">password</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1234&quot;</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">        </span><span class="nx">conn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">pool</span><span class="p">.</span><span class="nx">getConnection</span><span class="p">();</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;use cryptodb;&quot;</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// insert every trade</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">trades</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// get symbol name id - if not existing -&gt; create it</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="nx">SymbolIDQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;SELECT ID FROM symbols WHERE Name=&#39;&quot;</span><span class="o">+</span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;s&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;&#39;;&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">SymbolIDQuery</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nx">SymbolIDQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">SymbolIDQuery</span><span class="p">[</span><span class="mf">0</span><span class="p">][</span><span class="s2">&quot;ID&quot;</span><span class="p">];</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;INSERT INTO symbols (Name) VALUES (&#39;&quot;</span><span class="o">+</span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;s&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;&#39;);&quot;</span><span class="p">);</span>
+<span class="w">                </span><span class="nx">SymbolIDQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;SELECT ID FROM symbols WHERE Name=&#39;&quot;</span><span class="o">+</span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;s&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;&#39;;&quot;</span><span class="p">);</span>
+<span class="w">                </span><span class="nx">SymbolIDQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">SymbolIDQuery</span><span class="p">[</span><span class="mf">0</span><span class="p">][</span><span class="s2">&quot;ID&quot;</span><span class="p">];</span>
+<span class="w">                </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;New entry in symbols: &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;s&quot;</span><span class="p">]));</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="c1">// create insert sql query</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;(&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">SymbolIDQuery</span><span class="p">);</span>
+<span class="w">            </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;, &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;E&quot;</span><span class="p">]);</span>
+<span class="w">            </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;, &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;p&quot;</span><span class="p">]);</span>
+<span class="w">            </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;, &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;q&quot;</span><span class="p">]);</span>
+<span class="w">            </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;, &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]);</span>
+<span class="w">            </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;)&quot;</span><span class="p">;</span>
+<span class="w">            </span><span class="nx">sqlQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;INSERT INTO trades (SymbolID, EventTime, Price, Quantity, TradeTime) VALUES &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="p">;</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="nx">sqlQuery</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="nx">trades</span><span class="p">.</span><span class="nx">splice</span><span class="p">(</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">pool</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Something went wrong (insert data)&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">pool</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+<span class="c1">//###################################################################</span>
+</code></pre></div>
+
+<p><strong>Put it all together we get the following code</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">//####################</span>
+<span class="c1">// import library to connect with mariadb</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">mariadb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s2">&quot;mariadb&quot;</span><span class="p">);</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">createDB</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">conn</span><span class="p">;</span>
+<span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// connect to mariadb using the hostname and our login data</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">pool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">mariadb</span><span class="p">.</span><span class="nx">createPool</span><span class="p">({</span>
+<span class="w">            </span><span class="nx">host</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">            </span><span class="nx">user</span><span class="o">:</span><span class="s2">&quot;root&quot;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">            </span><span class="nx">password</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1234&quot;</span>
+<span class="w">        </span><span class="p">});</span>
+
+<span class="w">        </span><span class="nx">conn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">pool</span><span class="p">.</span><span class="nx">getConnection</span><span class="p">();</span>
+<span class="w">        </span><span class="c1">// create the database</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;DROP DATABASE IF EXISTS cryptodb;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;CREATE DATABASE cryptodb;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// in the created database: create tables &quot;symbols&quot; and &quot;trades&quot;</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;use cryptodb;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;CREATE TABLE symbols(\</span>
+<span class="s2">            ID INT(11) NOT NULL AUTO_INCREMENT,\</span>
+<span class="s2">            Name VARCHAR(50),\</span>
+<span class="s2">            PRIMARY KEY (ID)\</span>
+<span class="s2">            )\</span>
+<span class="s2">            engine=innodb\</span>
+<span class="s2">            DEFAULT CHARACTER SET = utf8;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;CREATE TABLE trades(\</span>
+<span class="s2">            ID INT(11) NOT NULL AUTO_INCREMENT,\</span>
+<span class="s2">            SymbolID INT(11) NOT NULL,\</span>
+<span class="s2">            EventTime BIGINT(11) NOT NULL,\</span>
+<span class="s2">            Price FLOAT(11, 6) NOT NULL,\</span>
+<span class="s2">            Quantity FLOAT(11, 6) NOT NULL,\</span>
+<span class="s2">            TradeTime BIGINT(11) NOT NULL,\</span>
+<span class="s2">            PRIMARY KEY (ID),\</span>
+<span class="s2">            CONSTRAINT fk_SymbolID\</span>
+<span class="s2">            FOREIGN KEY (SymbolID) REFERENCES Symbols (ID)\</span>
+<span class="s2">            ON DELETE NO ACTION\</span>
+<span class="s2">            ON UPDATE NO ACTION\</span>
+<span class="s2">            )\</span>
+<span class="s2">            engine=innodb\</span>
+<span class="s2">            DEFAULT CHARACTER SET = utf8;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">pool</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Something went wrong (creating database)&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">pool</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">insertData</span><span class="p">(</span><span class="nx">trades</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">conn</span><span class="p">;</span>
+<span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// connect to mariadb using the hostname and our login data</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">pool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">mariadb</span><span class="p">.</span><span class="nx">createPool</span><span class="p">({</span>
+<span class="w">            </span><span class="nx">host</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">            </span><span class="nx">user</span><span class="o">:</span><span class="s2">&quot;root&quot;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">            </span><span class="nx">password</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1234&quot;</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">        </span><span class="nx">conn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">pool</span><span class="p">.</span><span class="nx">getConnection</span><span class="p">();</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;use cryptodb;&quot;</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// insert every trade</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">trades</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// get symbol name id - if not existing -&gt; create it</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="nx">SymbolIDQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;SELECT ID FROM symbols WHERE Name=&#39;&quot;</span><span class="o">+</span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;s&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;&#39;;&quot;</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">SymbolIDQuery</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nx">SymbolIDQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">SymbolIDQuery</span><span class="p">[</span><span class="mf">0</span><span class="p">][</span><span class="s2">&quot;ID&quot;</span><span class="p">];</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;INSERT INTO symbols (Name) VALUES (&#39;&quot;</span><span class="o">+</span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;s&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;&#39;);&quot;</span><span class="p">);</span>
+<span class="w">                </span><span class="nx">SymbolIDQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;SELECT ID FROM symbols WHERE Name=&#39;&quot;</span><span class="o">+</span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;s&quot;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;&#39;;&quot;</span><span class="p">);</span>
+<span class="w">                </span><span class="nx">SymbolIDQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">SymbolIDQuery</span><span class="p">[</span><span class="mf">0</span><span class="p">][</span><span class="s2">&quot;ID&quot;</span><span class="p">];</span>
+<span class="w">                </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;New entry in symbols: &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;s&quot;</span><span class="p">]));</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="c1">// create insert sql query</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;(&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">SymbolIDQuery</span><span class="p">);</span>
+<span class="w">            </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;, &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;E&quot;</span><span class="p">]);</span>
+<span class="w">            </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;, &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;p&quot;</span><span class="p">]);</span>
+<span class="w">            </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;, &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;q&quot;</span><span class="p">]);</span>
+<span class="w">            </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;, &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">trades</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]);</span>
+<span class="w">            </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;)&quot;</span><span class="p">;</span>
+<span class="w">            </span><span class="nx">sqlQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;INSERT INTO trades (SymbolID, EventTime, Price, Quantity, TradeTime) VALUES &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">sqlQueryValues</span><span class="p">;</span>
+<span class="w">            </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="nx">sqlQuery</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="nx">trades</span><span class="p">.</span><span class="nx">splice</span><span class="p">(</span><span class="mf">0</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">pool</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Something went wrong (insert data)&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">pool</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+<span class="c1">//###################################################################</span>
+
+<span class="c1">//###################################################################</span>
+<span class="c1">// import ws library</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">WebSocket</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s2">&quot;ws&quot;</span><span class="p">);</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="c1">// log date and time when program started</span>
+<span class="kd">var</span><span class="w"> </span><span class="nx">date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">();</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">date</span><span class="p">.</span><span class="nx">toGMTString</span><span class="p">()</span><span class="si">}</span><span class="sb"> | Program started`</span><span class="p">);</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="c1">// save last n (maxNEntries) trades to this array</span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">tradesData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<span class="kd">let</span><span class="w"> </span><span class="nx">maxNEntries</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1000</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">RunWebsocketBinance</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="c1">// Create an array with our streams which we want to get from Binance and connect to the Binance Websocket</span>
+<span class="c1">// With the &#39;.join(&quot;/&quot;)&#39; we can join the elements of the array to a single string seperated by &quot;/&quot;</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">streamsBinance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;btcusdt@trade&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ethusdt@trade&quot;</span><span class="p">];</span>
+<span class="kd">var</span><span class="w"> </span><span class="nx">wsBinance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">WebSocket</span><span class="p">(</span><span class="s2">&quot;wss://fstream.binance.com/stream?streams=&quot;</span><span class="o">+</span><span class="nx">streamsBinance</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">));</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="c1">// There are different actions this websocket client can have: </span>
+<span class="c1">// When establishing the connection -&gt; &quot;open&quot;</span>
+<span class="c1">// When retrieving a message from binance -&gt; &quot;message&quot;</span>
+<span class="c1">// To keep the connection alive -&gt; &quot;ping&quot; and &quot;pong&quot;</span>
+<span class="c1">// -&gt; https://www.npmjs.com/package/ws: Pong messages are automatically sent in response to ping messages as required by the spec</span>
+<span class="c1">// all the work after each action is done in their functions</span>
+<span class="nx">wsBinance</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;open&quot;</span><span class="p">,</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">openWsBinance</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">date</span><span class="p">.</span><span class="nx">toGMTString</span><span class="p">()</span><span class="si">}</span><span class="sb"> | Connected to Binance Websocket`</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="nx">wsBinance</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">incomingWsBinance</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">//console.log(tradesData.length);//data.toString());</span>
+<span class="w">    </span><span class="nx">tradesData</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nb">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">toString</span><span class="p">())[</span><span class="s2">&quot;data&quot;</span><span class="p">]);</span>
+<span class="w">    </span><span class="c1">// when we collected 1000 messages -&gt; write them into our sql db and empty the messages array</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">tradesData</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nx">maxNEntries</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">insertData</span><span class="p">(</span><span class="nx">tradesData</span><span class="p">,</span><span class="w"> </span><span class="nx">maxNEntries</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">});</span>
+
+<span class="nx">wsBinance</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;ping&quot;</span><span class="p">,</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">heartbeatWsBinance</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">date</span><span class="p">.</span><span class="nx">toGMTString</span><span class="p">()</span><span class="si">}</span><span class="sb"> | Got a Ping from Binance | Pong has been sent automatically`</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="nx">wsBinance</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s2">&quot;pong&quot;</span><span class="p">,</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">heartbeatWsBinance</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nb">Date</span><span class="p">();</span>
+<span class="w">    </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="sb">`</span><span class="si">${</span><span class="nx">date</span><span class="p">.</span><span class="nx">toGMTString</span><span class="p">()</span><span class="si">}</span><span class="sb"> | Got a Pong from Binance`</span><span class="p">);</span>
+<span class="p">});</span>
+<span class="p">}</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="k">await</span><span class="w"> </span><span class="nx">createDB</span><span class="p">();</span>
+<span class="nx">RunWebsocketBinance</span><span class="p">();</span>
+<span class="p">}</span>
+<span class="c1">//####################</span>
+
+<span class="c1">//####################</span>
+<span class="nx">main</span><span class="p">()</span>
+<span class="c1">//####################</span>
+</code></pre></div>
+
+<p>The written code does not stop – so just CTRL + C.</p>
+<p><strong>In addition to the code above I also wrote some little script to export the data</strong> from the tables (after we gathered our data) into seperate csv’s. It basically connects to the database, queries the data in the tables using “SELECT * FROM tablename” and writes it to a file using the NodeJS library fs:</p>
+<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">fs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s1">&#39;fs&#39;</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">mariadb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">require</span><span class="p">(</span><span class="s2">&quot;mariadb&quot;</span><span class="p">);</span>
+<span class="c1">//####################</span>
+
+
+<span class="kd">function</span><span class="w"> </span><span class="nx">JsonArrayToCSV</span><span class="p">(</span><span class="nx">arr</span><span class="p">){</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">keys</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">Object</span><span class="p">.</span><span class="nx">keys</span><span class="p">(</span><span class="nx">arr</span><span class="p">[</span><span class="mf">0</span><span class="p">]);</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">csv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[];</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">tmp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="nx">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">keys</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="w"> </span><span class="nx">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">j</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">tmp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">keys</span><span class="p">[</span><span class="nx">j</span><span class="p">]);</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">tmp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">tmp</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;, &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">keys</span><span class="p">[</span><span class="nx">j</span><span class="p">]);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nx">csv</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">tmp</span><span class="p">);</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="nx">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">arr</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="w"> </span><span class="nx">j</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="nx">k</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">keys</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="w"> </span><span class="nx">k</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">k</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nx">tmp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">arr</span><span class="p">[</span><span class="nx">j</span><span class="p">][</span><span class="nx">keys</span><span class="p">[</span><span class="nx">k</span><span class="p">]]);</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nx">tmp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">tmp</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s2">&quot;, &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">String</span><span class="p">(</span><span class="nx">arr</span><span class="p">[</span><span class="nx">j</span><span class="p">][</span><span class="nx">keys</span><span class="p">[</span><span class="nx">k</span><span class="p">]]);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="nx">csv</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">tmp</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nx">csv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">csv</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;\n&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">csv</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+<span class="c1">//####################</span>
+<span class="k">async</span><span class="w"> </span><span class="kd">function</span><span class="w"> </span><span class="nx">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">conn</span><span class="p">;</span>
+<span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// connect to mariadb using the hostname and our login data</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="nx">pool</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">mariadb</span><span class="p">.</span><span class="nx">createPool</span><span class="p">({</span>
+<span class="w">            </span><span class="nx">host</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">            </span><span class="nx">user</span><span class="o">:</span><span class="s2">&quot;root&quot;</span><span class="p">,</span><span class="w"> </span>
+<span class="w">            </span><span class="nx">password</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;1234&quot;</span>
+<span class="w">        </span><span class="p">});</span>
+<span class="w">        </span><span class="nx">conn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">pool</span><span class="p">.</span><span class="nx">getConnection</span><span class="p">();</span>
+<span class="w">        </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;use cryptodb;&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">tables</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;SHOW TABLES&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kd">let</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">tables</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="nx">tmpData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">conn</span><span class="p">.</span><span class="nx">query</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">tables</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;Tables_in_cryptodb&quot;</span><span class="p">]);</span>
+<span class="w">            </span><span class="kd">var</span><span class="w"> </span><span class="nx">csv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">JsonArrayToCSV</span><span class="p">(</span><span class="nx">tmpData</span><span class="p">);</span>
+<span class="w">            </span><span class="nx">fs</span><span class="p">.</span><span class="nx">writeFileSync</span><span class="p">(</span><span class="s2">&quot;table&quot;</span><span class="o">+</span><span class="nx">tables</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="s2">&quot;Tables_in_cryptodb&quot;</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span><span class="p">,</span><span class="w"> </span><span class="nx">csv</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="nx">pool</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="nx">err</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Something went wrong (export data)&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+<span class="w">        </span><span class="nx">pool</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">        </span><span class="nx">conn</span><span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nx">main</span><span class="p">();</span>
+</code></pre></div>
+
+<p>This project can of course also be found on my github <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/MariaDB%20and%20Javascript">(github.com/Heuristic-Analyst/…)</a> – adios!</p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Download granular (hft) crypto data for free | Binance</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <meta name="description" content="Get data (Trades/aggTrades/K-line/Index K-line…) from Binance" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li><a href="/category/fundamentals.html">Fundamentals</a></li>
+                    <li><a href="/category/machine-learning.html">Machine Learning</a></li>
+                    <li class="active"><a href="/category/quant.html">Quant</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/download-granular-hft-crypto-data-for-free-binance.html" rel="bookmark"
+           title="Permalink to Download granular (hft) crypto data for free | Binance">Download granular (hft) crypto data for free | Binance</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2022-12-24T12:00:00+01:00">
+                Published: Sat 24 December 2022
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/quant.html">Quant</a>.</p>
+<p>tags: <a href="/tag/code.html">Code</a> <a href="/tag/quant.html">Quant</a> </p>
+</footer><!-- /.post-info -->      <p>Hello guys, today I’ll show you a quick and dirty method on how to get Trades/aggTrades/K-line/Index K-line… data for free (I think up to 2020).
+The data is from Binance only!</p>
+<p>You can find the data here: <a href="https://www.binance.com/en/landing/data">https://www.binance.com/en/landing/data</a></p>
+<p>If you click on “Trades” &gt; “Spot Data” you will see that Binance let you download each day seperatly. Because I do not want to click everything seperatly I wrote the following Python script to download the zip files (with the trade data in it) all at once – example on BTCUSDT (spot), trade data, last 365 days:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="k">def</span> <span class="nf">download_file</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="c1"># Send a request to the URL</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+    <span class="c1"># Check if the response is successful</span>
+    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+        <span class="c1"># Get the filename from the URL</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Open a file in write mode</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="c1"># Write the contents of the response (in binary format) to the file</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Successfully downloaded </span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Failed to download file. Status code: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># Get the current date</span>
+<span class="n">today</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+
+<span class="c1"># Set the number of days to go back</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">365</span>
+
+<span class="c1"># Iterate over the last n days</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+    <span class="c1"># Subtract the loop index from the current date</span>
+    <span class="n">dateToPrint</span> <span class="o">=</span> <span class="n">today</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="c1"># Format the date as a string in the desired format</span>
+    <span class="n">date_str</span> <span class="o">=</span> <span class="n">dateToPrint</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># Print the date</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">date_str</span><span class="p">)</span>
+    <span class="n">download_file</span><span class="p">(</span><span class="s2">&quot;https://data.binance.vision/data/spot/daily/trades/BTCUSDT/BTCUSDT-trades-&quot;</span><span class="o">+</span><span class="n">date_str</span><span class="o">+</span><span class="s2">&quot;.zip&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>I changed the code a bit to iterate through a list with different cryptocurrency pairs:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="k">def</span> <span class="nf">download_file</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="c1"># Send a request to the URL</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+    <span class="c1"># Check if the response is successful</span>
+    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+        <span class="c1"># Get the filename from the URL</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Open a file in write mode</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="c1"># Write the contents of the response (in binary format) to the file</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Successfully downloaded </span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Failed to download file. Status code: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+
+    <span class="c1"># Download the last n days of the crypto pairs in list x</span>
+    <span class="c1"># Get the current date</span>
+    <span class="n">today</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+
+    <span class="c1"># Set the number of days to go back</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="c1"># Cryptocurrency pairs to download data from</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;BTCUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ETHUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;XRPUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;BNBUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;LTCUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;SOLUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;MANAUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;DOGEUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;LINKUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;TRXUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MATICUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ADUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;DREPUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ATOMUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;BCHUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;LUNCUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;APEUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;DOTUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ETCUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;AVAXUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;SANDUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;HIVEUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;MASKUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;SHIBUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;DAShUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;XMRUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;WAVESUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;GALAUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;UNIUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;EOSUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;FILUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;AXSUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;CHZUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;FTMUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;VOXELUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ZECUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;XLMUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;DYDXUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NEARUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;APTUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;LOOMUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;AAVEUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;OPUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;STXUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;WBTCUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;MTLUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;SUSHIUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ALGOUSDT&quot;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">crypto_pair</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+        <span class="c1"># Iterate over the last n days</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># Subtract the loop index from the current date</span>
+            <span class="n">dateToPrint</span> <span class="o">=</span> <span class="n">today</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+            <span class="c1"># Format the date as a string in the desired format</span>
+            <span class="n">date_str</span> <span class="o">=</span> <span class="n">dateToPrint</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Print the date</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Downloading&quot;</span><span class="p">,</span> <span class="n">crypto_pair</span><span class="p">,</span> <span class="n">date_str</span><span class="p">,</span> <span class="s2">&quot;data...&quot;</span><span class="p">)</span>
+            <span class="n">download_file</span><span class="p">(</span>
+                <span class="s2">&quot;https://data.binance.vision/data/spot/daily/trades/&quot;</span> <span class="o">+</span> <span class="n">crypto_pair</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">crypto_pair</span> <span class="o">+</span> <span class="s2">&quot;-trades-&quot;</span> <span class="o">+</span> <span class="n">date_str</span> <span class="o">+</span> <span class="s2">&quot;.zip&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>Now we also need to create one big csv out of these csv’s. The following script should do it:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">zipfile</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">io</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+
+    <span class="c1"># Download the last n days of the crypto pairs in list x</span>
+    <span class="c1"># Get the current date</span>
+    <span class="n">today</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+
+    <span class="c1"># Set the number of days to go back</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="c1"># Cryptocurrency pairs to download data from</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;BTCUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ETHUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;XRPUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;BNBUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;LTCUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;SOLUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;MANAUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;DOGEUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;LINKUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;TRXUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MATICUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ADUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;DREPUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ATOMUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;BCHUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;LUNCUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;APEUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;DOTUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ETCUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;AVAXUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;SANDUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;HIVEUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;MASKUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;SHIBUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;DAShUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;XMRUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;WAVESUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;GALAUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;UNIUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;EOSUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;FILUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;AXSUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;CHZUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;FTMUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;VOXELUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ZECUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;XLMUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;DYDXUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;NEARUSDT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;APTUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;LOOMUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;AAVEUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;OPUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;STXUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;WBTCUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;MTLUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;SUSHIUSDT&quot;</span><span class="p">,</span> <span class="s2">&quot;ALGOUSDT&quot;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">crypto_pair</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating one csv file with data from:&quot;</span><span class="p">,</span> <span class="n">crypto_pair</span><span class="p">,</span> <span class="s2">&quot; (saving as&quot;</span><span class="p">,</span> <span class="n">crypto_pair</span> <span class="o">+</span> <span class="s2">&quot;_trades_data.csv) ...&quot;</span><span class="p">)</span>
+        <span class="n">csv_contents</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">zip_file_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Iterate over the last n days (the other way - begin with old data and add newer data)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># Subtract the loop index from the current date</span>
+            <span class="n">dateToPrint</span> <span class="o">=</span> <span class="n">today</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+            <span class="c1"># Format the date as a string in the desired format</span>
+            <span class="n">date_str</span> <span class="o">=</span> <span class="n">dateToPrint</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Print the date</span>
+            <span class="n">zip_file_names</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">crypto_pair</span> <span class="o">+</span> <span class="s2">&quot;-trades-&quot;</span> <span class="o">+</span> <span class="n">date_str</span> <span class="o">+</span> <span class="s2">&quot;.zip&quot;</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">zip_file</span> <span class="ow">in</span> <span class="n">zip_file_names</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Currently at zip:&quot;</span><span class="p">,</span> <span class="n">zip_file</span><span class="p">)</span>
+            <span class="c1"># Open the zip file</span>
+            <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">z</span><span class="p">:</span>
+                <span class="c1"># Extract the CSV file from the zip file</span>
+                <span class="n">csv_file</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">namelist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">csv_data</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">csv_file</span><span class="p">)</span>
+                <span class="c1"># Read the CSV data into a DataFrame and append it to the list</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">csv_data</span><span class="p">))</span>
+                <span class="n">csv_contents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Saving csv...&quot;</span><span class="p">)</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">csv_contents</span><span class="p">)</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">crypto_pair</span><span class="o">+</span><span class="s2">&quot;.csv&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Csv file created!&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>To plot everything you can use this code:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="c1"># Use BTCUSDT&#39;s trades to plot - load in data</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="s1">&#39;BTCUSDT_trades_data.csv&#39;</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+<span class="c1"># x: date time (timestamp in ms) - y: price the trade was made</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">ts</span><span class="o">/</span><span class="mi">1000</span><span class="p">)</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">]]),</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div>
+
+<p>The code can be found here too: <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Download%20granular%20crypto%20data%20-%20binance%20only">www.github.com/Heuristic-Analyst/…</a><br>
+Cheers!</p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

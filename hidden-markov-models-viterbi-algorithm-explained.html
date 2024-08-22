@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Hidden Markov Models: Viterbi Algorithm Explained</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <meta name="description" content="Explain the Viterbi algorithm as simple as possible" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li><a href="/category/fundamentals.html">Fundamentals</a></li>
+                    <li class="active"><a href="/category/machine-learning.html">Machine Learning</a></li>
+                    <li><a href="/category/quant.html">Quant</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/hidden-markov-models-viterbi-algorithm-explained.html" rel="bookmark"
+           title="Permalink to Hidden Markov Models: Viterbi Algorithm Explained">Hidden Markov Models: Viterbi Algorithm Explained</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2022-08-15T12:00:00+02:00">
+                Published: Mon 15 August 2022
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/machine-learning.html">Machine Learning</a>.</p>
+<p>tags: <a href="/tag/code.html">Code</a> <a href="/tag/machine-learning.html">Machine Learning</a> <a href="/tag/quant.html">Quant</a> </p>
+</footer><!-- /.post-info -->      <p>In this post I would like to explain the Viterbi algorithm as simple as possible. It is used to compute (EFFICIENTLY) the most likely sequence of hidden states in a HMM given a sequence of observed variables. The following pictures I drew should explain it. Afterwards you can find a code corresponding to it.<br>
+1. Problem<br>
+<img alt="Viterbi Algorithm 1" src="/images/2022_08_15_article_1_picture_1.png"><br>
+2. First step<br>
+<img alt="Viterbi Algorithm 2" src="/images/2022_08_15_article_1_picture_2.png"><br>
+3. Create diagram<br>
+<img alt="Viterbi Algorithm 3" src="/images/2022_08_15_article_1_picture_3.png"><br>
+4. How to calculate the other values in the diagram<br>
+<img alt="Viterbi Algorithm 4" src="/images/2022_08_15_article_1_picture_4.png"><br>
+5. Fill everything out and connect transitions<br>
+<img alt="Viterbi Algorithm 5" src="/images/2022_08_15_article_1_picture_5.png"><br>
+6. Find most likely hidden state sequence by walking the most probable path backwards<br>
+<img alt="Viterbi Algorithm 6" src="/images/2022_08_15_article_1_picture_6.png"><br></p>
+<p>Python code – Viterbi Algorithm:</p>
+<div class="highlight"><pre><span></span><code><span class="n">hidden_states</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cloudy&quot;</span><span class="p">,</span> <span class="s2">&quot;rainy&quot;</span><span class="p">,</span> <span class="s2">&quot;sunny&quot;</span><span class="p">]</span>
+<span class="n">initial_matrix</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;cloudy&quot;</span><span class="p">:</span><span class="mf">0.396</span><span class="p">,</span> <span class="s2">&quot;rainy&quot;</span><span class="p">:</span><span class="mf">0.368</span><span class="p">,</span> <span class="s2">&quot;sunny&quot;</span><span class="p">:</span><span class="mf">0.239</span><span class="p">}</span>
+<span class="n">transition_matrix</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;cloudy&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;cloudy&quot;</span><span class="p">:</span><span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;rainy&quot;</span><span class="p">:</span><span class="mf">0.6</span><span class="p">,</span> <span class="s2">&quot;sunny&quot;</span><span class="p">:</span><span class="mf">0.3</span><span class="p">},</span>
+    <span class="s2">&quot;rainy&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;cloudy&quot;</span><span class="p">:</span><span class="mf">0.7</span><span class="p">,</span> <span class="s2">&quot;rainy&quot;</span><span class="p">:</span><span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;sunny&quot;</span><span class="p">:</span><span class="mf">0.2</span><span class="p">},</span>
+    <span class="s2">&quot;sunny&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;cloudy&quot;</span><span class="p">:</span><span class="mf">0.4</span><span class="p">,</span> <span class="s2">&quot;rainy&quot;</span><span class="p">:</span><span class="mf">0.4</span><span class="p">,</span> <span class="s2">&quot;sunny&quot;</span><span class="p">:</span><span class="mf">0.2</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">emission_states</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;happy&quot;</span><span class="p">,</span> <span class="s2">&quot;sad&quot;</span><span class="p">]</span>
+<span class="n">emission_matrix</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;happy&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;cloudy&quot;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span> <span class="s2">&quot;rainy&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span> <span class="s2">&quot;sunny&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">},</span>
+    <span class="s2">&quot;sad&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;cloudy&quot;</span><span class="p">:</span><span class="mf">0.2</span><span class="p">,</span> <span class="s2">&quot;rainy&quot;</span><span class="p">:</span><span class="mf">0.7</span><span class="p">,</span> <span class="s2">&quot;sunny&quot;</span><span class="p">:</span><span class="mf">0.1</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">observation_sequence</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sad&quot;</span><span class="p">,</span> <span class="s2">&quot;happy&quot;</span><span class="p">,</span> <span class="s2">&quot;sad&quot;</span><span class="p">,</span> <span class="s2">&quot;sad&quot;</span><span class="p">,</span> <span class="s2">&quot;happy&quot;</span><span class="p">,</span> <span class="s2">&quot;sad&quot;</span><span class="p">,</span> <span class="s2">&quot;happy&quot;</span><span class="p">]</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># calculate first nodes</span>
+<span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">({})</span>
+<span class="k">for</span> <span class="n">current_hidden_state</span> <span class="ow">in</span> <span class="n">hidden_states</span><span class="p">:</span>
+    <span class="c1"># save information about each node: state, probability and previous maximum node coming from</span>
+    <span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">current_hidden_state</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;probability&quot;</span><span class="p">:</span> <span class="n">initial_matrix</span><span class="p">[</span><span class="n">current_hidden_state</span><span class="p">]</span><span class="o">*</span><span class="n">emission_matrix</span><span class="p">[</span><span class="n">observation_sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">current_hidden_state</span><span class="p">],</span>
+        <span class="s2">&quot;previous&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+
+<span class="c1"># calculate all next nodes</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">observation_sequence</span><span class="p">)):</span>
+    <span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">({})</span>
+    <span class="k">for</span> <span class="n">current_hidden_state</span> <span class="ow">in</span> <span class="n">hidden_states</span><span class="p">:</span>
+        <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">current_hidden_state</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;probability&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;previous&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+        <span class="c1"># calculate hidden state by choosing maximizing previous state</span>
+        <span class="c1"># iterate through previous states</span>
+        <span class="k">for</span> <span class="n">previous_hidden_state</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c1"># calculate probability with previous state x transition prob.(previous, current) x emission prob.</span>
+            <span class="n">prob_tmp</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">previous_hidden_state</span><span class="p">][</span><span class="s2">&quot;probability&quot;</span><span class="p">]</span>
+            <span class="n">prob_tmp</span> <span class="o">*=</span> <span class="n">transition_matrix</span><span class="p">[</span><span class="n">previous_hidden_state</span><span class="p">][</span><span class="n">current_hidden_state</span><span class="p">]</span>
+            <span class="n">prob_tmp</span> <span class="o">*=</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">observation_sequence</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="n">current_hidden_state</span><span class="p">]</span>
+            <span class="c1"># if prob. &gt; previous calculated hidden state for current state -&gt; substitute</span>
+            <span class="k">if</span> <span class="n">prob_tmp</span> <span class="o">&gt;</span> <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">current_hidden_state</span><span class="p">][</span><span class="s2">&quot;probability&quot;</span><span class="p">]:</span>
+                <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">current_hidden_state</span><span class="p">][</span><span class="s2">&quot;probability&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_tmp</span>
+                <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">current_hidden_state</span><span class="p">][</span><span class="s2">&quot;previous&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">previous_hidden_state</span>
+
+<span class="c1"># choose most probable state: backwards iteration</span>
+<span class="n">most_likely_sequence</span> <span class="o">=</span> <span class="p">[[</span><span class="s2">&quot;Step: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">observation_sequence</span><span class="p">))]</span>
+<span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">l</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">hidden_states</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">hidden_states</span><span class="p">][</span><span class="s2">&quot;probability&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">most_likely_sequence</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]:</span>
+                <span class="n">most_likely_sequence</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">hidden_states</span>
+                <span class="n">most_likely_sequence</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">hidden_states</span><span class="p">][</span><span class="s2">&quot;probability&quot;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">most_likely_sequence</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="n">most_likely_sequence</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]][</span><span class="s2">&quot;previous&quot;</span><span class="p">]</span>
+        <span class="n">most_likely_sequence</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">most_likely_sequence</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]][</span><span class="s2">&quot;probability&quot;</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">most_likely_sequence</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</code></pre></div>
+
+<p><br></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Output</span>
+<span class="c1"># Step, hidden state, probability of sequence until this step</span>
+<span class="p">[</span><span class="s1">&#39;Step: 1&#39;</span><span class="p">,</span> <span class="s1">&#39;rainy&#39;</span><span class="p">,</span> <span class="mf">0.2576</span><span class="p">]</span>
+<span class="p">[</span><span class="s1">&#39;Step: 2&#39;</span><span class="p">,</span> <span class="s1">&#39;sunny&#39;</span><span class="p">,</span> <span class="mf">0.041216</span><span class="p">]</span>
+<span class="p">[</span><span class="s1">&#39;Step: 3&#39;</span><span class="p">,</span> <span class="s1">&#39;rainy&#39;</span><span class="p">,</span> <span class="mf">0.01154048</span><span class="p">]</span>
+<span class="p">[</span><span class="s1">&#39;Step: 4&#39;</span><span class="p">,</span> <span class="s1">&#39;cloudy&#39;</span><span class="p">,</span> <span class="mf">0.0016156672000000002</span><span class="p">]</span>
+<span class="p">[</span><span class="s1">&#39;Step: 5&#39;</span><span class="p">,</span> <span class="s1">&#39;sunny&#39;</span><span class="p">,</span> <span class="mf">0.00038776012800000005</span><span class="p">]</span>
+<span class="p">[</span><span class="s1">&#39;Step: 6&#39;</span><span class="p">,</span> <span class="s1">&#39;rainy&#39;</span><span class="p">,</span> <span class="mf">0.00010857283584000001</span><span class="p">]</span>
+<span class="p">[</span><span class="s1">&#39;Step: 7&#39;</span><span class="p">,</span> <span class="s1">&#39;sunny&#39;</span><span class="p">,</span> <span class="mf">1.7371653734400005e-05</span><span class="p">]</span>
+</code></pre></div>
+
+<p>The code can be found here too: <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Hidden%20Markov%20Model%20-%20most%20likely%20sequence">www.github.com/Heuristic-Analyst/…</a><br>
+Cheers!</p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>
