@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="english">
+<head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content="Pelican" />
+        <title>Transcribe and Translate Realtime Audio (with GUI)</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+        <meta name="description" content="Coding a Transcriber and Translator (with GUI)" />
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Heuristic Analyst</a></h1>
+                <nav><ul>
+                    <li class="active"><a href="/category/code.html">Code</a></li>
+                    <li><a href="/category/fundamentals.html">Fundamentals</a></li>
+                    <li><a href="/category/machine-learning.html">Machine Learning</a></li>
+                    <li><a href="/category/quant.html">Quant</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/transcribe-and-translate-realtime-audio-with-gui.html" rel="bookmark"
+           title="Permalink to Transcribe and Translate Realtime Audio (with GUI)">Transcribe and Translate Realtime Audio (with GUI)</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2024-08-23T12:01:00+02:00">
+                Published: Fri 23 August 2024
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/heuristic-analyst.html">Heuristic Analyst</a>
+        </address>
+<p>In <a href="/category/code.html">Code</a>.</p>
+<p>tags: <a href="/tag/code.html">Code</a> <a href="/tag/machine-learning.html">Machine Learning</a> </p>
+</footer><!-- /.post-info -->      <p>Are you lazy when writing long texts on your computer? Do you want to be able to transcribe or even translate (only into english tho) everything locally, only using Python? You found the perfect article then, congrats.</p>
+<p>I wanted a program that records what I was saying and can output it as text (Speech to Text / Transcribe).<br>
+I used the whisper model(s) (through faster-whisper) for it and run them on a cpu.<br>
+Audio capturing is done with pyaudio.</p>
+<p>Because I am using whisper, i can also translate everything into english.<br>
+I also included the python script so you can see how I have done it (with GUI).</p>
+<p>I then converted it for portability reasons into 2 .EXE files, one with the base model, one with the medium model.<br>
+I wanted to upload it both, but the other is about 2.3GB large, and Github doesn't allow me to upload it, even with LFS.<br>
+--&gt; If you want it to convert by yourself, good luck, because I used virtual environments throughout this project and the model is an extern folder, I needed to somehow hook something and do other stuff, finding dlls and more. I got it only to work because I uploaded the script to claude.ai and asked it how to do it lol, and after a lot of back and forth (that the model folder isn't included it understood what was wrong) it worked - so do the same if you want another model</p>
+<p>This how it looks:<br>
+<img alt="Transcribe and Translate 1" src="/images/2024_08_23_article_2_picture_1.png"></p>
+<p>Here the code: (can be also found here: <a href="https://github.com/Heuristic-Analyst/heuristic-analyst.com/tree/main/Transcribe%20and%20Translate">www.github.com/Heuristic-Analyst/…</a>)<br></p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">tkinter</span> <span class="k">as</span> <span class="nn">tk</span>
+<span class="kn">from</span> <span class="nn">tkinter</span> <span class="kn">import</span> <span class="n">ttk</span>
+<span class="kn">import</span> <span class="nn">pyaudio</span>
+<span class="kn">import</span> <span class="nn">wave</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">faster_whisper</span> <span class="kn">import</span> <span class="n">WhisperModel</span>
+
+<span class="k">class</span> <span class="nc">AudioRecorderApp</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">master</span> <span class="o">=</span> <span class="n">master</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="n">master</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Transcribe and Translate&quot;</span><span class="p">)</span>
+        <span class="n">master</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">padx</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_recording</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frames</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Create a frame for buttons and dropdown</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">control_frame</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">master</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">control_frame</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_button</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Start Recording&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start_recording</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_button</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">pady</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_button</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Stop Recording&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stop_recording</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">DISABLED</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_button</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">pady</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="c1"># Language dropdown with label</span>
+        <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Recording Language:&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">pady</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">languages</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;Automatic&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;English&quot;</span><span class="p">,</span> <span class="s2">&quot;en&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;French&quot;</span><span class="p">,</span> <span class="s2">&quot;fr&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;German&quot;</span><span class="p">,</span> <span class="s2">&quot;de&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Italian&quot;</span><span class="p">,</span> <span class="s2">&quot;it&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Mandarin&quot;</span><span class="p">,</span> <span class="s2">&quot;zh&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Russian&quot;</span><span class="p">,</span> <span class="s2">&quot;ru&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Spanish&quot;</span><span class="p">,</span> <span class="s2">&quot;es&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Turkish&quot;</span><span class="p">,</span> <span class="s2">&quot;tr&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Ukrainian&quot;</span><span class="p">,</span> <span class="s2">&quot;uk&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Arabic&quot;</span><span class="p">,</span> <span class="s2">&quot;ar&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Czech&quot;</span><span class="p">,</span> <span class="s2">&quot;cs&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Danish&quot;</span><span class="p">,</span> <span class="s2">&quot;da&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Dutch&quot;</span><span class="p">,</span> <span class="s2">&quot;nl&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Finnish&quot;</span><span class="p">,</span> <span class="s2">&quot;fi&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Greek&quot;</span><span class="p">,</span> <span class="s2">&quot;el&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Hebrew&quot;</span><span class="p">,</span> <span class="s2">&quot;he&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Hindi&quot;</span><span class="p">,</span> <span class="s2">&quot;hi&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Hungarian&quot;</span><span class="p">,</span> <span class="s2">&quot;hu&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Japanese&quot;</span><span class="p">,</span> <span class="s2">&quot;ja&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Korean&quot;</span><span class="p">,</span> <span class="s2">&quot;ko&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Persian&quot;</span><span class="p">,</span> <span class="s2">&quot;fa&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Polish&quot;</span><span class="p">,</span> <span class="s2">&quot;pl&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Portuguese&quot;</span><span class="p">,</span> <span class="s2">&quot;pt&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Romanian&quot;</span><span class="p">,</span> <span class="s2">&quot;ro&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Slovak&quot;</span><span class="p">,</span> <span class="s2">&quot;sk&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Swedish&quot;</span><span class="p">,</span> <span class="s2">&quot;sv&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Thai&quot;</span><span class="p">,</span> <span class="s2">&quot;th&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;Vietnamese&quot;</span><span class="p">,</span> <span class="s2">&quot;vi&quot;</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">language_var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">languages</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">language_dropdown</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Combobox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_frame</span><span class="p">,</span> <span class="n">textvariable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">language_var</span><span class="p">,</span>
+                                            <span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="n">lang</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">lang</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">languages</span><span class="p">],</span> <span class="n">state</span><span class="o">=</span><span class="s2">&quot;readonly&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">language_dropdown</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">pady</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="c1"># Add translation checkbox</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translate_var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">BooleanVar</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translate_check</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Checkbutton</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">control_frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Translate to English&quot;</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">translate_var</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translate_check</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">pady</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="c1"># Frame for status, copy button, and text box</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content_frame</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">master</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content_frame</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">LEFT</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">BOTH</span><span class="p">)</span>
+
+        <span class="c1"># Create a frame for the status label and copy button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_copy_frame</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content_frame</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_copy_frame</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+        <span class="c1"># Add status label aligned to the left</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_label</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status_copy_frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Ready to record&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_label</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">LEFT</span><span class="p">,</span> <span class="n">anchor</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">W</span><span class="p">)</span>
+
+        <span class="c1"># Add copy text button aligned to the right</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copy_button</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status_copy_frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Copy Text&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">copy_text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copy_button</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_box</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">content_frame</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">wrap</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">WORD</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_box</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">BOTH</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">pyaudio</span><span class="o">.</span><span class="n">PyAudio</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dot_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dot_animation</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">get_language_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">((</span><span class="n">lang</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">lang</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">languages</span> <span class="k">if</span> <span class="n">lang</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">code</span><span class="p">),</span> <span class="n">code</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">start_recording</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_recording</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frames</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_button</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">DISABLED</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_button</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">NORMAL</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="n">pyaudio</span><span class="o">.</span><span class="n">paInt16</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mi">44100</span><span class="p">,</span> <span class="nb">input</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frames_per_buffer</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
+        <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">record_audio</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animate_dots</span><span class="p">(</span><span class="s2">&quot;Recording&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">animate_dots</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dot_animation</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">after_cancel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dot_animation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dot_count</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dot_count</span> <span class="o">%</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_label</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="s1">&#39;.&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">dot_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dot_animation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">animate_dots</span><span class="p">(</span><span class="n">prefix</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">record_audio</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_recording</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">stop_recording</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_recording</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_button</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">NORMAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_button</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">tk</span><span class="o">.</span><span class="n">DISABLED</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">stop_stream</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dot_animation</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">after_cancel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dot_animation</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.wav&quot;</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">temp_wav</span><span class="p">:</span>
+            <span class="n">wf</span> <span class="o">=</span> <span class="n">wave</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">temp_wav</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+            <span class="n">wf</span><span class="o">.</span><span class="n">setnchannels</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">wf</span><span class="o">.</span><span class="n">setsampwidth</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">get_sample_size</span><span class="p">(</span><span class="n">pyaudio</span><span class="o">.</span><span class="n">paInt16</span><span class="p">))</span>
+            <span class="n">wf</span><span class="o">.</span><span class="n">setframerate</span><span class="p">(</span><span class="mi">44100</span><span class="p">)</span>
+            <span class="n">wf</span><span class="o">.</span><span class="n">writeframes</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frames</span><span class="p">))</span>
+            <span class="n">wf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">transcribe_audio</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">temp_wav</span><span class="o">.</span><span class="n">name</span><span class="p">,))</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">transcribe_audio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">audio_file</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animate_dots</span><span class="p">(</span><span class="s2">&quot;Processing&quot;</span><span class="p">)</span>
+
+        <span class="n">selected_language</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">language_var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="n">language_code</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">lang</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">lang</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">languages</span> <span class="k">if</span> <span class="n">lang</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">selected_language</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">task</span> <span class="o">=</span> <span class="s2">&quot;transcribe&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_var</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+            <span class="n">task</span> <span class="o">=</span> <span class="s2">&quot;translate&quot;</span>
+
+        <span class="n">segments</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">transcribe</span><span class="p">(</span><span class="n">audio_file</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="n">language_code</span><span class="p">)</span>
+
+        <span class="n">transcription</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">segment</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">segments</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_box</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">tk</span><span class="o">.</span><span class="n">END</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_box</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">END</span><span class="p">,</span> <span class="n">transcription</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dot_animation</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">after_cancel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dot_animation</span><span class="p">)</span>
+
+        <span class="n">detected_language_code</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">language</span>
+        <span class="n">detected_language</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_language_name</span><span class="p">(</span><span class="n">detected_language_code</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">language_code</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">task</span> <span class="o">==</span> <span class="s2">&quot;transcribe&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status_label</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Transcription complete (Detected: </span><span class="si">{</span><span class="n">detected_language</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">task</span> <span class="o">==</span> <span class="s2">&quot;translate&quot;</span><span class="p">:</span>
+            <span class="n">source_language</span> <span class="o">=</span> <span class="n">detected_language</span> <span class="k">if</span> <span class="n">language_code</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">selected_language</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status_label</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Translation complete (From </span><span class="si">{</span><span class="n">source_language</span><span class="si">}</span><span class="s2"> to English)&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status_label</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Transcription complete (</span><span class="si">{</span><span class="n">selected_language</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">copy_text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_box</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">tk</span><span class="o">.</span><span class="n">END</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">clipboard_clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">master</span><span class="o">.</span><span class="n">clipboard_append</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_label</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Text copied to clipboard&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">script_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+    <span class="n">models_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">script_dir</span><span class="p">,</span> <span class="s1">&#39;WhisperModels&#39;</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">WhisperModel</span><span class="p">(</span><span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">compute_type</span><span class="o">=</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="n">download_root</span><span class="o">=</span><span class="n">models_dir</span><span class="p">)</span>
+
+    <span class="n">root</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Tk</span><span class="p">()</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">AudioRecorderApp</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+    <span class="n">root</span><span class="o">.</span><span class="n">mainloop</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</code></pre></div>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a rel="nofollow" href="https://getpelican.com/">Pelican</a>, which takes great advantage of <a rel="nofollow" href="https://www.python.org/">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a rel="nofollow" href="https://www.smashingmagazine.com/2009/08/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>
